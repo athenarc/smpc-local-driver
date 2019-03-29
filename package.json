@@ -2,10 +2,10 @@
   "name": "smpc-local-driver",
   "version": "1.0.0",
   "description": "Local driver SMPC framework",
-  "main": "server.js",
+  "main": "client.js",
   "scripts": {
-    "start": "nodemon --watch . --watch server.js",
-    "serve": "node server.js",
+    "start": "nodemon --watch . --watch client.js",
+    "serve": "node client.js",
     "lint": "standard"
   },
   "engines": {
@@ -27,17 +27,18 @@
     "ignore": []
   },
   "dependencies": {
-    "body-parser": "^1.18.3",
-    "cors": "^2.8.5",
     "dotenv": "^6.2.0",
-    "express": "^4.16.4",
-    "helmet": "^3.15.0",
     "level": "^4.0.0",
     "standard": "^12.0.1",
-    "winston": "^3.2.1"
+    "winston": "^3.2.1",
+    "ws": "^6.2.1"
   },
   "devDependencies": {
     "nodemon": "^1.18.9",
     "run.env": "^1.1.0"
+  },
+  "optionalDependencies": {
+    "bufferutil": "^4.0.1",
+    "utf-8-validate": "^5.0.2"
   }
 }
