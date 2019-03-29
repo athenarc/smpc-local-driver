@@ -15,15 +15,23 @@ if (_.isEmpty(process.env.ID)) {
   throw new Error('Client ID not defined!')
 }
 
-const wss = new WebSocket.Server({ port: PORT })
-const client = new Client(process.env.ID)
+const wss = new WebSocket.Server({ port: PORT, clientTracking: true })
 
-wss.on('connection', (ws) => {
-  print('Connection Accepted!')
+const handleConnection = (ws) => {
+  const client = new Client(process.env.ID)
+
+  ws.on('close', (data) => {
+    console.log('Connection Closed: ', data)
+  })
+
+  ws.on('error', (err) => {
+    console.log(err)
+  })
 
   ws.on('message', (data) => {
     print(`Message: ${data}`)
     data = unpack(data)
+
     if (data.message === 'import') {
       client.run()
 
@@ -32,4 +40,9 @@ wss.on('connection', (ws) => {
       })
     }
   })
+}
+
+wss.on('connection', (ws) => {
+  print('Connection Accepted!')
+  handleConnection(ws)
 })
