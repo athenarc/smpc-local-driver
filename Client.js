@@ -24,7 +24,7 @@ class Client extends EventEmitter {
     })
 
     this.client.on('exit', (code) => {
-      console.log(`Child exited with code ${code}`)
+      console.log(`Client exited with code ${code}`)
       this.emit('exit', { id: this.id })
       this.client = null
     })
