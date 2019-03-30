@@ -2,7 +2,7 @@ require('dotenv').config()
 
 const _ = require('lodash')
 const WebSocket = require('ws')
-const Client = require('./Client')
+const Client = require('./ClientSMPC')
 const { print, pack, unpack } = require('./helpers')
 
 const PORT = process.env.PORT || 3004
