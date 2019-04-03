@@ -4,11 +4,11 @@ import decimal
 from itertools import chain
 
 def filter1(data) -> bool:
-  if data % 3 == 0: return True
+  if data % 1 == 0: return True
   else: return False
 
 def filter2(data) -> bool:
-  if data >= 200: return True
+  if data <= 200 and data >= 100: return True
   else: return False
 
 def sort_attributes(attribute_type_mapping):
@@ -131,7 +131,8 @@ def preprocess(computation_request, computation_request_id, attributes, data_fil
       processed_attribute = numerical_int_preprocess(considered_data)  
     if attribute_type_map[attribute] == 'Numerical_float': 
       processed_attribute = numerical_float_preprocess(considered_data, decimal_accuracy)
-    output = processed_attribute
+    processed_data = list(processed_attribute)
+    output = list(chain.from_iterable(zip(*processed_data)))
   elif computation_request == 'secure_aggregation':
     raise NotImplementedError
   elif computation_request == '2d_numerical_histogram':
@@ -167,7 +168,7 @@ def preprocess(computation_request, computation_request_id, attributes, data_fil
       else:
         output += [*i] 
 
-  with open('/home/gpik/SCALE-MAMBA/Client_data2.txt', 'w') as f:
+  with open('/home/gpik/SCALE-MAMBA/Client_data0.txt', 'w') as f:
     for item in output:
         f.write("%s\n" % item)
   return output
@@ -176,7 +177,7 @@ def preprocess(computation_request, computation_request_id, attributes, data_fil
 if __name__ == "__main__":
   computation_request_id = 'test_id'
   attribute_type_map = {"Gender": 'Categorical', "Address": 'Categorical', 'RVEDV (ml)': 'Numerical_float', 'Medical Record Number': "Numerical_int" }
-  attributes = ['Gender', 'Address']#['Medical Record Number', 'RVEDV (ml)']#'Medical Record Number','RVEDV (ml)'] #'Gender']#, 
-  computation_request = '2d_categorical_histogram' #'2d_mixed_histogram'
+  attributes = ['RVEDV (ml)']#['Medical Record Number', 'RVEDV (ml)']#'Medical Record Number','RVEDV (ml)'] #'Gender']#, 
+  computation_request = '1d_numerical_histogram' #'2d_mixed_histogram'
   data = preprocess(computation_request, computation_request_id, attributes, '/home/gpik/Documents/Data/cvi_identified_small.csv', attribute_type_map, filters = {"Medical Record Number":filter1, "RVEDV (ml)": filter2})
   print(data)
