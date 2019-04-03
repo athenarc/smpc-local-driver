@@ -4,7 +4,7 @@ import decimal
 from itertools import chain
 
 def filter1(data) -> bool:
-  if data % 2 == 0: return True
+  if data % 3 == 0: return True
   else: return False
 
 def filter2(data) -> bool:
@@ -95,7 +95,6 @@ def preprocess(computation_request, computation_request_id, attributes, data_fil
       if boolean: valid_indices.append(i)
     dataset = data.iloc[valid_indices]
     dataset = dataset[attributes]
-    print(dataset)
 
   if computation_request == '2d_mixed_histogram':
     assert len(attributes) == 2, "Need 2 attributes for a '2d_mixed_histogram' computation request"
