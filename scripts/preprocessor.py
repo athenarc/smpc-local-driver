@@ -55,7 +55,21 @@ def numerical_int_preprocess(unprocessed_attribute) -> list:
 
 
 def preprocess(computation_request, computation_request_id, attributes, data_file_name, attribute_type_map, filters = None, decimal_accuracy = 5):
+  ''' Function to apply preprocessing to dataset. 
+      computation_request: 'str', one of '1d_categorical_histogram', '2d_categorical_histogram', '1d_numerical_histogram', '2d_numerical_histogram', '2d_mixed_histogram', 'secure_aggregation',
+      computation_request_id: 'str', Unique id of computation request,
+      attributes: 'list', contains attributes that will be used for the computation,
+      data_file_name: 'str', path + file_name where data is located,
+      attribute_type_map: 'dict', maps attributes of dataset to their data types,
+      filters: 'dict', maps attributes to filter functions that we want to apply,
+      decimal_accuracy: 'int', how many decimal digits to consider for floats
+  '''
+
   data = pd.read_csv(data_file_name)
+  assert type(decimal_accuracy) == int, "decimal_accuracy must be of type 'int'"
+  assert type(computation_request_id) == str, "computation_request_id must be of type 'str'"
+  assert type(attribute_type_map) == dict, "attribute_type_map must be of type 'dict'"
+  assert type(data_file_name) == str, "data_file_name must be of type 'str'"
   assert set(attribute_type_map.keys()) <= set(data.columns), 'Invalid attribute-type map: keys'
   assert set(attribute_type_map.values()) <= set(['Categorical', 'Numerical_float', 'Numerical_int']), 'Invalid attribute-type map: values'
   assert set(attributes) <= set(data.columns), 'Some requested attribute is not available'
@@ -107,7 +121,7 @@ def preprocess(computation_request, computation_request_id, attributes, data_fil
     assert (attribute_type_map[attributes[0]] == 'Categorical'), "Need a categorical attribute for '1d_categorical_histogram'"
     considered_data = dataset[attributes[0]]
     processed_attribute = categorical_preprocess(considered_data)  
-    processed_data = processed_attribute    
+    output = processed_attribute    
   elif computation_request == '1d_numerical_histogram':
     assert len(attributes) == 1, "Need 1 attribute for a '1d_numerical_histogram' computation request"
     assert (attribute_type_map[attributes[0]] != 'Categorical'), "Need a numerical attribute for '1d_numerical_histogram'"
@@ -117,7 +131,7 @@ def preprocess(computation_request, computation_request_id, attributes, data_fil
       processed_attribute = numerical_int_preprocess(considered_data)  
     if attribute_type_map[attribute] == 'Numerical_float': 
       processed_attribute = numerical_float_preprocess(considered_data, decimal_accuracy)
-    processed_data = processed_attribute
+    output = processed_attribute
   elif computation_request == 'secure_aggregation':
     raise NotImplementedError
   elif computation_request == '2d_numerical_histogram':
@@ -140,19 +154,22 @@ def preprocess(computation_request, computation_request_id, attributes, data_fil
   elif computation_request == '2d_categorical_histogram':
     assert len(attributes) == 2, "Need 2 attributes for a '2d_categorical_histogram' computation request"
     assert (attribute_type_map[attributes[0]] == 'Categorical') and (attribute_type_map[attributes[1]] == 'Categorical'), "Need two categorical attributes for '2d-categorical_histogram' computation request"
-    processed_data = []
+    output = []
     for attribute in attributes:
       considered_data = dataset[attribute]    
       processed_attribute = categorical_preprocess(considered_data)  
-      processed_data.append(processed_attribute)
-
+      output.append(processed_attribute)
+  
+  with open('/home/gpik/SCALE-MAMBA/Client_data.txt', 'w') as f:
+    for item in output:
+        f.write("%s\n" % item)
   return output
 
 
 if __name__ == "__main__":
   computation_request_id = 'test_id'
   attribute_type_map = {"Gender": 'Categorical', "Address": 'Categorical', 'RVEDV (ml)': 'Numerical_float', 'Medical Record Number': "Numerical_int" }
-  attributes = ['Medical Record Number', 'RVEDV (ml)']#'Medical Record Number','RVEDV (ml)'] #'Gender']#, 
-  computation_request = '2d_numerical_histogram' #'2d_mixed_histogram'
+  attributes = ['Gender']#['Medical Record Number', 'RVEDV (ml)']#'Medical Record Number','RVEDV (ml)'] #'Gender']#, 
+  computation_request = '1d_categorical_histogram' #'2d_mixed_histogram'
   data = preprocess(computation_request, computation_request_id, attributes, '/home/gpik/Documents/Data/cvi_identified_small.csv', attribute_type_map, filters = {"Medical Record Number":filter1, "RVEDV (ml)": filter2})
   print(data)
