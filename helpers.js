@@ -12,8 +12,13 @@ const unpack = (msg) => {
   return JSON.parse(msg)
 }
 
+const includeError = (str, err) => {
+  return err.some((el) => str.includes(el))
+}
+
 module.exports = {
   print,
   pack,
-  unpack
+  unpack,
+  includeError
 }

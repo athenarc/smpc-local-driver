@@ -1,6 +1,8 @@
 const { spawn } = require('child_process')
 const EventEmitter = require('events')
 
+const { includeError } = require('./helpers')
+
 const SCALE = process.env.SMPC_ENGINE
 const CLIENT_CMD = `${SCALE}/Client-Api.x`
 const TOTAL_PLAYERS = 3
@@ -10,6 +12,7 @@ class Client extends EventEmitter {
     super()
     this.client = null
     this.id = id
+    this.errors = []
   }
 
   run () {
@@ -20,7 +23,11 @@ class Client extends EventEmitter {
     })
 
     this.client.stderr.on('data', (data) => {
-      console.log(data.toString())
+      data = data.toString().toLowerCase()
+      if (includeError(data, ['what()', 'aborted'])) {
+        this.errors.push(data)
+        this.emit('error', { id: this.id, errors: this.errors })
+      }
     })
 
     this.client.on('exit', (code) => {
