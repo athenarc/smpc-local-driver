@@ -34,15 +34,15 @@ const handleConnection = (ws) => {
 
     if (data.message === 'import') {
       client.run()
-
-      client.on('error', (msg) => {
-        ws.send(pack({ message: 'error', ...msg }))
-      })
-
-      client.on('exit', (msg) => {
-        ws.send(pack({ message: 'exit', entity: 'client', ...msg }))
-      })
     }
+  })
+
+  client.on('error', (msg) => {
+    ws.send(pack({ message: 'error', ...msg }))
+  })
+
+  client.on('exit', (msg) => {
+    ws.send(pack({ message: 'exit', entity: 'client', ...msg }))
   })
 }
 
