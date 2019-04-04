@@ -39,6 +39,10 @@ const handleConnection = (ws) => {
     if (data.message === 'import') {
       client.run()
     }
+
+    if (data.message === 'restart') {
+      client.terminate()
+    }
   })
 
   client.on('data-size', (msg) => {
