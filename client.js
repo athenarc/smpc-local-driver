@@ -11,7 +11,7 @@ if (_.isEmpty(process.env.SMPC_ENGINE)) {
   throw new Error('SMPC Engine absolute path not defined!')
 }
 
-if (_.isEmpty(process.env.ID)) {
+if (!process.env.ID) {
   throw new Error('Client ID not defined!')
 }
 
