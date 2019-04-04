@@ -32,9 +32,17 @@ const handleConnection = (ws) => {
     print(`Message: ${data}`)
     data = unpack(data)
 
+    if (data.message === 'data-size') {
+      client.dataSize()
+    }
+
     if (data.message === 'import') {
       client.run()
     }
+  })
+
+  client.on('data-size', (msg) => {
+    ws.send(pack({ message: 'data-size', ...msg }))
   })
 
   client.on('error', (msg) => {
