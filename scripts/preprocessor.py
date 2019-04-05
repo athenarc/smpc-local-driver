@@ -1,6 +1,9 @@
 import numpy as np
 import pandas as pd 
 import decimal
+import json
+from hashlib import sha256
+import os
 from itertools import chain
 
 def filter1(data) -> bool:
@@ -183,6 +186,7 @@ def preprocess(computation_request, computation_request_id, attributes, data_fil
       if boolean: valid_indices.append(i)
     dataset = data.iloc[valid_indices]
     dataset = dataset[attributes]
+    dataset_size = dataset.shape[0]
 
   if computation_request == '2d_mixed_histogram':
     output = mixed_preprocess(dataset, attributes, attribute_type_map, decimal_accuracy)
@@ -202,14 +206,29 @@ def preprocess(computation_request, computation_request_id, attributes, data_fil
   elif computation_request == '2d_categorical_histogram':
     output = categorical_2d(dataset, attributes, attribute_type_map)
 
-  with open('/home/gpik/SCALE-MAMBA/Client_data2.txt', 'w') as f:
+  output_directory = '/home/gpik/smpc-local-driver/datasets/' + computation_request_id
+  try:
+    os.mkdir(output_directory)
+  except Exception:
+    pass
+  with open(output_directory + '/' + computation_request_id + '.txt', 'w') as f:
     for item in output:
         f.write("%s\n" % item)
+    
+  with open(output_directory + '/' + computation_request_id + '.txt',"rb") as f:
+    SHA256 = sha256()    
+    for byte_block in iter(lambda: f.read(4096),b""):
+      SHA256.update(byte_block)    
+
+  json_output = {'precision': 10**(-decimal_accuracy), 'dataSize': dataset_size, 'hash256': SHA256.hexdigest() }  #
+  with open(output_directory + '/' + computation_request_id + '.json', 'w') as f:
+    json.dump(json_output, f)  
+
   return output
 
 
 if __name__ == "__main__":
-  computation_request_id = 'test_id'
+  computation_request_id = 'test_id_1'
   attribute_type_map = {"Gender": 'Categorical', "Address": 'Categorical', 'RVEDV (ml)': 'Numerical_float', 'Medical Record Number': "Numerical_int" }
   attributes = ['RVEDV (ml)']#['Medical Record Number', 'RVEDV (ml)']#'Medical Record Number','RVEDV (ml)'] #'Gender']#, 
   computation_request = '1d_numerical_histogram' #'2d_mixed_histogram'
