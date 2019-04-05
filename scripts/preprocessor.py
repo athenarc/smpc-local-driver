@@ -52,6 +52,87 @@ def numerical_int_preprocess(unprocessed_attribute) -> list:
     processed_attribute.append([data_instance,0])
   return processed_attribute
 
+def mixed_preprocess(dataset, attributes, attribute_type_map, decimal_accuracy) -> list:
+  assert len(attributes) == 2, "Need 2 attributes for a '2d_mixed_histogram' computation request"
+  assert (attribute_type_map[attributes[0]] == 'Categorical') or (attribute_type_map[attributes[1]] == 'Categorical'), "Need at least one categorical attribute for '2d-mixed computation request'"
+  assert (attribute_type_map[attributes[0]] != 'Categorical') or (attribute_type_map[attributes[1]] != 'Categorical'), "Need at least one non-categorical attribute for '2d-mixed computation request'"
+  processed_data = []
+  for attribute in attributes:
+    considered_data = dataset[attribute]
+    if attribute_type_map[attribute] == 'Categorical': 
+      processed_attribute = categorical_preprocess(considered_data)      
+    if attribute_type_map[attribute] == 'Numerical_int': 
+      processed_attribute = numerical_int_preprocess(considered_data)  
+    if attribute_type_map[attribute] == 'Numerical_float': 
+      processed_attribute = numerical_float_preprocess(considered_data, decimal_accuracy)
+    processed_data.append(processed_attribute)
+    output = []
+    for i in chain.from_iterable(zip(*processed_data)):
+      if type(i) == int:
+        output += [i]
+      else:
+        output += [*i]
+    return output
+
+def categorical_1d(dataset, attributes, attribute_type_map) -> list:
+  assert len(attributes) == 1, "Need 1 attribute for a '1d_categorical_histogram' computation request"
+  assert (attribute_type_map[attributes[0]] == 'Categorical'), "Need a categorical attribute for '1d_categorical_histogram'"
+  considered_data = dataset[attributes[0]]
+  processed_attribute = categorical_preprocess(considered_data)  
+  output = processed_attribute    
+  return output
+
+def numerical_1d(dataset, attributes, attribute_type_map, decimal_accuracy) -> list:
+  assert len(attributes) == 1, "Need 1 attribute for a '1d_numerical_histogram' computation request"
+  assert (attribute_type_map[attributes[0]] != 'Categorical'), "Need a numerical attribute for '1d_numerical_histogram'"
+  attribute = attributes[0]
+  considered_data = dataset[attribute]
+  processed_attribute = None
+  if attribute_type_map[attribute] == 'Numerical_int': 
+    processed_attribute = numerical_int_preprocess(considered_data)  
+  elif attribute_type_map[attribute] == 'Numerical_float': 
+    processed_attribute = numerical_float_preprocess(considered_data, decimal_accuracy)
+  assert processed_attribute is not None, "Attribute needs to be numerical"
+  processed_data = list(processed_attribute)
+  output = []
+  for i in processed_data:
+    output+= [*i]
+  return output
+
+def numerical_2d(dataset, attributes, attribute_type_map, decimal_accuracy) -> list:
+  assert len(attributes) == 2, "Need 2 attributes for a '2d_numerical_histogram' computation request"
+  assert (attribute_type_map[attributes[0]] != 'Categorical') and (attribute_type_map[attributes[1]] != 'Categorical'), "Need two non-categorical attributes for '2d-numerical_histogram' computation request"
+  processed_data = []
+  for attribute in attributes:
+    considered_data = dataset[attribute]    
+    if attribute_type_map[attribute] == 'Numerical_int': 
+      processed_attribute = numerical_int_preprocess(considered_data)  
+    if attribute_type_map[attribute] == 'Numerical_float': 
+      processed_attribute = numerical_float_preprocess(considered_data, decimal_accuracy)
+    processed_data.append(processed_attribute)
+    output = []
+    for i in chain.from_iterable(zip(*processed_data)):
+      if type(i) == int:
+        output += [i]
+      else:
+        output += [*i]  
+  return output
+
+def categorical_2d(dataset, attributes, attribute_type_map) -> list:
+  assert len(attributes) == 2, "Need 2 attributes for a '2d_categorical_histogram' computation request"
+  assert (attribute_type_map[attributes[0]] == 'Categorical') and (attribute_type_map[attributes[1]] == 'Categorical'), "Need two categorical attributes for '2d-categorical_histogram' computation request"
+  output = []
+  processed_data = []
+  for attribute in attributes:
+    considered_data = dataset[attribute]    
+    processed_attribute = categorical_preprocess(considered_data)  
+    processed_data.append(processed_attribute)
+  output = []
+  for i in chain.from_iterable(zip(*processed_data)):
+    if type(i) == int:
+      output += [i]
+    else:
+      output += [*i] 
 
 
 def preprocess(computation_request, computation_request_id, attributes, data_file_name, filters = None, decimal_accuracy = 5):
@@ -104,82 +185,24 @@ def preprocess(computation_request, computation_request_id, attributes, data_fil
     dataset = dataset[attributes]
 
   if computation_request == '2d_mixed_histogram':
-    assert len(attributes) == 2, "Need 2 attributes for a '2d_mixed_histogram' computation request"
-    assert (attribute_type_map[attributes[0]] == 'Categorical') or (attribute_type_map[attributes[1]] == 'Categorical'), "Need at least one categorical attribute for '2d-mixed computation request'"
-    assert (attribute_type_map[attributes[0]] != 'Categorical') or (attribute_type_map[attributes[1]] != 'Categorical'), "Need at least one non-categorical attribute for '2d-mixed computation request'"
-    processed_data = []
-    for attribute in attributes:
-      considered_data = dataset[attribute]
-      if attribute_type_map[attribute] == 'Categorical': 
-        processed_attribute = categorical_preprocess(considered_data)      
-      if attribute_type_map[attribute] == 'Numerical_int': 
-        processed_attribute = numerical_int_preprocess(considered_data)  
-      if attribute_type_map[attribute] == 'Numerical_float': 
-        processed_attribute = numerical_float_preprocess(considered_data, decimal_accuracy)
-      processed_data.append(processed_attribute)
-      output = []
-      for i in chain.from_iterable(zip(*processed_data)):
-        if type(i) == int:
-          output += [i]
-        else:
-          output += [*i]
+    output = mixed_preprocess(dataset, attributes, attribute_type_map, decimal_accuracy)
+    
   elif computation_request == '1d_categorical_histogram':
-    assert len(attributes) == 1, "Need 1 attribute for a '1d_categorical_histogram' computation request"
-    assert (attribute_type_map[attributes[0]] == 'Categorical'), "Need a categorical attribute for '1d_categorical_histogram'"
-    considered_data = dataset[attributes[0]]
-    processed_attribute = categorical_preprocess(considered_data)  
-    output = processed_attribute    
+    output = categorical_1d(dataset, attributes, attribute_type_map)
+
   elif computation_request == '1d_numerical_histogram':
-    assert len(attributes) == 1, "Need 1 attribute for a '1d_numerical_histogram' computation request"
-    assert (attribute_type_map[attributes[0]] != 'Categorical'), "Need a numerical attribute for '1d_numerical_histogram'"
-    attribute = attributes[0]
-    considered_data = dataset[attribute]
-    processed_attribute = None
-    if attribute_type_map[attribute] == 'Numerical_int': 
-      processed_attribute = numerical_int_preprocess(considered_data)  
-    elif attribute_type_map[attribute] == 'Numerical_float': 
-      processed_attribute = numerical_float_preprocess(considered_data, decimal_accuracy)
-    assert processed_attribute is not None, "Attribute needs to be numerical"
-    processed_data = list(processed_attribute)
-    output = []
-    for i in processed_data:
-      output+= [*i]
+    output = numerical_1d(dataset, attributes, attribute_type_map, decimal_accuracy)
+
   elif computation_request == 'secure_aggregation':
     raise NotImplementedError
-  elif computation_request == '2d_numerical_histogram':
-    assert len(attributes) == 2, "Need 2 attributes for a '2d_numerical_histogram' computation request"
-    assert (attribute_type_map[attributes[0]] != 'Categorical') and (attribute_type_map[attributes[1]] != 'Categorical'), "Need two non-categorical attributes for '2d-numerical_histogram' computation request"
-    processed_data = []
-    for attribute in attributes:
-      considered_data = dataset[attribute]    
-      if attribute_type_map[attribute] == 'Numerical_int': 
-        processed_attribute = numerical_int_preprocess(considered_data)  
-      if attribute_type_map[attribute] == 'Numerical_float': 
-        processed_attribute = numerical_float_preprocess(considered_data, decimal_accuracy)
-      processed_data.append(processed_attribute)
-      output = []
-      for i in chain.from_iterable(zip(*processed_data)):
-        if type(i) == int:
-          output += [i]
-        else:
-          output += [*i]  
-  elif computation_request == '2d_categorical_histogram':
-    assert len(attributes) == 2, "Need 2 attributes for a '2d_categorical_histogram' computation request"
-    assert (attribute_type_map[attributes[0]] == 'Categorical') and (attribute_type_map[attributes[1]] == 'Categorical'), "Need two categorical attributes for '2d-categorical_histogram' computation request"
-    output = []
-    processed_data = []
-    for attribute in attributes:
-      considered_data = dataset[attribute]    
-      processed_attribute = categorical_preprocess(considered_data)  
-      processed_data.append(processed_attribute)
-    output = []
-    for i in chain.from_iterable(zip(*processed_data)):
-      if type(i) == int:
-        output += [i]
-      else:
-        output += [*i] 
 
-  with open('/home/gpik/SCALE-MAMBA/Client_data0.txt', 'w') as f:
+  elif computation_request == '2d_numerical_histogram':
+    output = numerical_2d(dataset, attributes, attribute_type_map, decimal_accuracy)
+
+  elif computation_request == '2d_categorical_histogram':
+    output = categorical_2d(dataset, attributes, attribute_type_map)
+
+  with open('/home/gpik/SCALE-MAMBA/Client_data2.txt', 'w') as f:
     for item in output:
         f.write("%s\n" % item)
   return output
