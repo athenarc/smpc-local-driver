@@ -54,24 +54,31 @@ def numerical_int_preprocess(unprocessed_attribute) -> list:
 
 
 
-def preprocess(computation_request, computation_request_id, attributes, data_file_name, attribute_type_map, filters = None, decimal_accuracy = 5):
+def preprocess(computation_request, computation_request_id, attributes, data_file_name, filters = None, decimal_accuracy = 5):
   ''' Function to apply preprocessing to dataset. 
       computation_request: 'str', one of '1d_categorical_histogram', '2d_categorical_histogram', '1d_numerical_histogram', '2d_numerical_histogram', '2d_mixed_histogram', 'secure_aggregation',
       computation_request_id: 'str', Unique id of computation request,
       attributes: 'list', contains attributes that will be used for the computation,
       data_file_name: 'str', path + file_name where data is located,
-      attribute_type_map: 'dict', maps attributes of dataset to their data types,
       filters: 'dict', maps attributes to filter functions that we want to apply,
       decimal_accuracy: 'int', how many decimal digits to consider for floats
   '''
 
   data = pd.read_csv(data_file_name)
+  attribute_type_map = {}
+  for index, value in data.dtypes.iteritems():
+    if str(value) == 'object':
+      attribute_type_map[index] = 'Categorical'
+    elif 'float' in str(value):
+      attribute_type_map[index] = 'Numerical_float'
+    elif 'int' in str(value):
+      attribute_type_map[index] = 'Numerical_int'
+    else:
+      raise NotImplementedError
+
   assert type(decimal_accuracy) == int, "decimal_accuracy must be of type 'int'"
   assert type(computation_request_id) == str, "computation_request_id must be of type 'str'"
-  assert type(attribute_type_map) == dict, "attribute_type_map must be of type 'dict'"
   assert type(data_file_name) == str, "data_file_name must be of type 'str'"
-  assert set(attribute_type_map.keys()) <= set(data.columns), 'Invalid attribute-type map: keys'
-  assert set(attribute_type_map.values()) <= set(['Categorical', 'Numerical_float', 'Numerical_int']), 'Invalid attribute-type map: values'
   assert set(attributes) <= set(data.columns), 'Some requested attribute is not available'
   assert decimal_accuracy > 0, "Decimal accuracy must be positive"
   assert decimal_accuracy <= 10, "Maximal supported decimal accuracy is 10 digits"
@@ -127,10 +134,12 @@ def preprocess(computation_request, computation_request_id, attributes, data_fil
     assert (attribute_type_map[attributes[0]] != 'Categorical'), "Need a numerical attribute for '1d_numerical_histogram'"
     attribute = attributes[0]
     considered_data = dataset[attribute]
+    processed_attribute = None
     if attribute_type_map[attribute] == 'Numerical_int': 
       processed_attribute = numerical_int_preprocess(considered_data)  
-    if attribute_type_map[attribute] == 'Numerical_float': 
+    elif attribute_type_map[attribute] == 'Numerical_float': 
       processed_attribute = numerical_float_preprocess(considered_data, decimal_accuracy)
+    assert processed_attribute is not None, "Attribute needs to be numerical"
     processed_data = list(processed_attribute)
     output = []
     for i in processed_data:
@@ -181,5 +190,5 @@ if __name__ == "__main__":
   attribute_type_map = {"Gender": 'Categorical', "Address": 'Categorical', 'RVEDV (ml)': 'Numerical_float', 'Medical Record Number': "Numerical_int" }
   attributes = ['RVEDV (ml)']#['Medical Record Number', 'RVEDV (ml)']#'Medical Record Number','RVEDV (ml)'] #'Gender']#, 
   computation_request = '1d_numerical_histogram' #'2d_mixed_histogram'
-  data = preprocess(computation_request, computation_request_id, attributes, '/home/gpik/Documents/Data/cvi_identified_small.csv', attribute_type_map, filters = {"Medical Record Number":filter1, "RVEDV (ml)": filter2})
+  data = preprocess(computation_request, computation_request_id, attributes, '/home/gpik/Documents/Data/cvi_identified_small.csv', filters = {"Medical Record Number":filter1, "RVEDV (ml)": filter2})
   print(data)
