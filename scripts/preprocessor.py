@@ -8,7 +8,7 @@ def filter1(data) -> bool:
   else: return False
 
 def filter2(data) -> bool:
-  if data <= 200 and data >= 100: return True
+  if data <= 250 and data >= 10: return True
   else: return False
 
 def sort_attributes(attribute_type_mapping):
@@ -132,7 +132,9 @@ def preprocess(computation_request, computation_request_id, attributes, data_fil
     if attribute_type_map[attribute] == 'Numerical_float': 
       processed_attribute = numerical_float_preprocess(considered_data, decimal_accuracy)
     processed_data = list(processed_attribute)
-    output = list(chain.from_iterable(zip(*processed_data)))
+    output = []
+    for i in processed_data:
+      output+= [*i]
   elif computation_request == 'secure_aggregation':
     raise NotImplementedError
   elif computation_request == '2d_numerical_histogram':
