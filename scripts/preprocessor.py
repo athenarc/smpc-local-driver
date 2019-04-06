@@ -1,114 +1,6 @@
-import numpy as np
-import pandas as pd 
-import decimal
-import json
-from hashlib import sha256
-import os
-from itertools import chain
-import gc
+from utils import *
 
-def filter1(data) -> bool:
-  if data % 1 == 0: return True
-  else: return False
-
-def filter2(data) -> bool:
-  if data <= 250 and data >= 10: return True
-  else: return False
-
-def sort_attributes(attribute_type_mapping):
-  def sorting(type_):
-    return len(attribute_type_mapping[type_])
-  return sorting
-
-def categorical_preprocess(unprocessed_attribute, valueToIntMap) -> list:
-  count = 0
-  for data_instance in unprocessed_attribute.values:
-    if data_instance in valueToIntMap.keys(): yield valueToIntMap[data_instance]
-    else: 
-      valueToIntMap[data_instance] = count
-      yield valueToIntMap[data_instance]
-      count += 1
-
-def numerical_float_preprocess(unprocessed_attribute, decimal_accuracy) -> list:
-  for data_instance in unprocessed_attribute.values:
-    data_instance_as_decimal = decimal.Decimal(data_instance)
-    abs_exponent = abs(data_instance_as_decimal.as_tuple().exponent)
-    accuracy_difference = abs_exponent-decimal_accuracy
-    assert len(data_instance_as_decimal.as_tuple().digits[:-abs_exponent]) <= 10, 'Integer values are too large'
-
-    if accuracy_difference >= 0:
-      yield int("".join(str(i) for i in data_instance_as_decimal.as_tuple().digits[:-abs_exponent]))
-      yield int("".join(str(i) for i in data_instance_as_decimal.as_tuple().digits[-abs_exponent:-accuracy_difference]))
-    else:
-      yield int("".join(str(i) for i in data_instance_as_decimal.as_tuple().digits[:-abs_exponent]))
-      yield int("".join(str(i) for i in data_instance_as_decimal.as_tuple().digits[-abs_exponent:] + ['0']*(-accuracy_difference)))
-
-def numerical_int_preprocess(unprocessed_attribute) -> list:
-  processed_attribute = []
-  for data_instance in unprocessed_attribute.values:
-    data_instance_as_string = str(data_instance)
-    assert len(data_instance_as_string) <= 10, 'Integer values are too large'
-    yield data_instance_as_string
-    yield 0
-
-def mixed_preprocess(dataset, attributes, attribute_type_map, decimal_accuracy, attributeToValueMap) -> list:
-  assert len(attributes) == 2, "Need 2 attributes for a '2d_mixed_histogram' computation request"
-  assert (attribute_type_map[attributes[0]] == 'Categorical') or (attribute_type_map[attributes[1]] == 'Categorical'), "Need at least one categorical attribute for '2d-mixed computation request'"
-  assert (attribute_type_map[attributes[0]] != 'Categorical') or (attribute_type_map[attributes[1]] != 'Categorical'), "Need at least one non-categorical attribute for '2d-mixed computation request'"
-  processed_data = []
-  for attribute in attributes:
-    if attribute_type_map[attribute] == 'Categorical': 
-      processed_data.append(categorical_preprocess(dataset[attribute], attributeToValueMap[attribute]))
-    if attribute_type_map[attribute] == 'Numerical_int': 
-      processed_data.append(numerical_int_preprocess(dataset[attribute]))
-    if attribute_type_map[attribute] == 'Numerical_float': 
-      processed_data.append(numerical_float_preprocess(dataset[attribute], decimal_accuracy))
-  for i in iter(range(dataset.shape[0])):
-    yield next(processed_data[0])
-    yield next(processed_data[1])
-    yield next(processed_data[1])
-
-def categorical_1d(dataset, attributes, attribute_type_map, attributeToValueMap) -> list:
-  assert len(attributes) == 1, "Need 1 attribute for a '1d_categorical_histogram' computation request"
-  assert (attribute_type_map[attributes[0]] == 'Categorical'), "Need a categorical attribute for '1d_categorical_histogram'"
-  for i in categorical_preprocess(dataset[attributes[0]], attributeToValueMap[attributes[0]]): yield i
-  
-
-def numerical_1d(dataset, attributes, attribute_type_map, decimal_accuracy) -> list:
-  assert len(attributes) == 1, "Need 1 attribute for a '1d_numerical_histogram' computation request"
-  assert (attribute_type_map[attributes[0]] != 'Categorical'), "Need a numerical attribute for '1d_numerical_histogram'"
-  if attribute_type_map[attribute] == 'Numerical_int': 
-    for i in numerical_int_preprocess(dataset[attributes[0]]): yield i
-  elif attribute_type_map[attribute] == 'Numerical_float': 
-    for i in numerical_float_preprocess(dataset[attributes[0]], decimal_accuracy): yield i
-
-def numerical_2d(dataset, attributes, attribute_type_map, decimal_accuracy) -> list:
-  assert len(attributes) == 2, "Need 2 attributes for a '2d_numerical_histogram' computation request"
-  assert (attribute_type_map[attributes[0]] != 'Categorical') and (attribute_type_map[attributes[1]] != 'Categorical'), "Need two non-categorical attributes for '2d-numerical_histogram' computation request"
-  processed_data = []
-  for attribute in attributes: 
-    if attribute_type_map[attribute] == 'Numerical_int': 
-      processed_data.append(numerical_int_preprocess(dataset[attribute]))
-    if attribute_type_map[attribute] == 'Numerical_float': 
-      processed_data.append(numerical_float_preprocess(dataset[attribute], decimal_accuracy))
-  for i in iter(range(dataset.shape[0])):
-    yield next(processed_data[0])
-    yield next(processed_data[0])
-    yield next(processed_data[1])
-    yield next(processed_data[1])
-
-def categorical_2d(dataset, attributes, attribute_type_map, attributeToValueMap) -> list:
-  assert len(attributes) == 2, "Need 2 attributes for a '2d_categorical_histogram' computation request"
-  assert (attribute_type_map[attributes[0]] == 'Categorical') and (attribute_type_map[attributes[1]] == 'Categorical'), "Need two categorical attributes for '2d-categorical_histogram' computation request"
-  processed_data = []
-  for attribute in attributes:    
-    processed_data.append(categorical_preprocess(dataset[attribute], attributeToValueMap[attribute]))
-  for i in iter(range(dataset.shape[0])):
-    yield next(processed_data[0])
-    yield next(processed_data[1])
-
-
-def preprocess(computation_request, computation_request_id, attributes, data_file_name, filters = None, decimal_accuracy = 5):
+def preprocess(computation_request, computation_request_id, attributes, data_file_name, mapping_file_name, filters = None, decimal_accuracy = 5):
   ''' Function to apply preprocessing to dataset. 
       computation_request: 'str', one of '1d_categorical_histogram', '2d_categorical_histogram', '1d_numerical_histogram', '2d_numerical_histogram', '2d_mixed_histogram', 'secure_aggregation',
       computation_request_id: 'str', Unique id of computation request,
@@ -129,11 +21,13 @@ def preprocess(computation_request, computation_request_id, attributes, data_fil
       attribute_type_map[index] = 'Numerical_int'
     else:
       raise NotImplementedError
-
-  assert type(decimal_accuracy) == int, "decimal_accuracy must be of type 'int'"
-  assert type(computation_request_id) == str, "computation_request_id must be of type 'str'"
-  assert type(data_file_name) == str, "data_file_name must be of type 'str'"
-  assert set(attributes) <= set(data.columns), 'Some requested attribute is not available'
+  assert type(mapping_file_name) == str, "'mapping_file_name' must be of type 'str'"
+  assert type(decimal_accuracy) == int, "'decimal_accuracy' must be of type 'int'"
+  assert type(computation_request_id) == str, "'computation_request_id' must be of type 'str'"
+  assert type(data_file_name) == str, "'data_file_name' must be of type 'str'"
+  assert set(attributes) <= set(['Gender', 'Address', 'Patient Age', 'Heart rate',	'Height (cm)',	'Weight (kg)', 'LVEDV (ml)', 'LVESV (ml)', \
+'LVSV (ml)',	'LVEF (%)', 'LV Mass (g)', 'RVEDV (ml)', 'RVESV (ml)', 'RVSV (ml)', \
+'RVEF (%)', 'RV Mass (g)', 'BMI (kg/msq)', 'BMI (kg/m²)', 'BSA', 'BSA (msq)', 'CO (L/min)', 'Central PP (mmHg)', 'DBP (mmHg)', 'LVEF (ratio)', 'MAP', 'PAP (mmHg)' , 'PP (mmHg)', 'RVEF (ratio)', 'SBP (mmHg)', 'SVR (mmHg/L/min)']), 'Some requested attribute is not available'
   assert decimal_accuracy > 0, "Decimal accuracy must be positive"
   assert decimal_accuracy <= 10, "Maximal supported decimal accuracy is 10 digits"
   assert (filters is None) or (type(filters) == dict), "Input 'filters' must be a dictionary or None"
@@ -144,7 +38,7 @@ def preprocess(computation_request, computation_request_id, attributes, data_fil
        
   # this sorting mechanism ensures cat -> integer -> float
   attributes = sorted(attributes, key = sort_attributes(attribute_type_map))  
-
+  
   if filters is None:
     dataset = data[attributes]
   else:
@@ -160,16 +54,19 @@ def preprocess(computation_request, computation_request_id, attributes, data_fil
   delete_cols = set(data.columns) - set(attributes) 
   data = data.drop(list(delete_cols), axis = 1)
   dataset_size = dataset.shape[0]
+  sizeAlloc = 0
   
-  attributeToValueMap, attributeToInverseValueMap, attributeToInt, intToAttribute = {}, None, {}, {}
+  attributeToInt, intToAttribute = {}, {}
   for i, attribute in enumerate(attributes):
     attributeToInt[attribute] = i 
     intToAttribute[i] = attribute
     if attribute_type_map[attribute] == 'Categorical':
-      attributeToValueMap[attribute] = {}
-  if attributeToValueMap == {}:
-    attributeToValueMap = None
-  
+      sizeAlloc += dataset_size
+    else:
+      sizeAlloc += 2*dataset_size
+  with open(mapping_file_name, 'r') as f:
+    attributeToValueMap = json.load(f) 
+
   gc.collect()
   
   output_directory = '/home/gpik/smpc-local-driver/datasets/' + computation_request_id
@@ -205,20 +102,10 @@ def preprocess(computation_request, computation_request_id, attributes, data_fil
     SHA256 = sha256()    
     for byte_block in iter(lambda: f.read(4096),b""):
       SHA256.update(byte_block)    
-  
-  if attributeToValueMap is not None: attributeToInverseValueMap = {key: dict(zip(value.values(), value.keys())) for key, value in attributeToValueMap.items()}
 
-  json_output = {'precision': 10**(-decimal_accuracy), 'dataSize': dataset_size, 'hash256': SHA256.hexdigest(), 'attributeToInt': attributeToInt, \
-'intToAttribute': intToAttribute, 'attributeToValueMap': attributeToValueMap, "attributeToInverseValueMap": attributeToInverseValueMap  }  #
+  json_output = {'precision': 10**(-decimal_accuracy), 'sizeAlloc': sizeAlloc, 'dataSize': dataset_size, 'hash256': SHA256.hexdigest(), 'attributeToInt': attributeToInt, \
+'intToAttribute': intToAttribute}  #
   with open(output_directory + '/' + computation_request_id + '.json', 'w') as f:
     json.dump(json_output, f)  
   
   return 1
-
-
-if __name__ == "__main__":
-  computation_request_id = 'test_id_1'
-  attribute_type_map = {"Gender": 'Categorical', "Address": 'Categorical', 'RVEDV (ml)': 'Numerical_float', 'Medical Record Number': "Numerical_int" }
-  attributes = ['Gender','Address']#,'Address']#, 'Address']#,'Address']#, 'RVEDV (ml)']#['Medical Record Number', 'RVEDV (ml)']#'Medical Record Number','RVEDV (ml)'] #'Gender']#, 
-  computation_request = '2d_categorical_histogram' #'2d_mixed_histogram'
-  data = preprocess(computation_request, computation_request_id, attributes, '/home/gpik/Documents/Data/cvi_identified_small.csv')#, filters = {"Medical Record Number":filter1, "RVEDV (ml)": filter2})
