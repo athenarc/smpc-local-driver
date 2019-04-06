@@ -69,9 +69,9 @@ def categorical_1d(dataset, attributes, attribute_type_map, attributeToValueMap)
 def numerical_1d(dataset, attributes, attribute_type_map, decimal_accuracy) -> list:
   assert len(attributes) == 1, "Need 1 attribute for a '1d_numerical_histogram' computation request"
   assert (attribute_type_map[attributes[0]] != 'Categorical'), "Need a numerical attribute for '1d_numerical_histogram'"
-  if attribute_type_map[attribute] == 'Numerical_int': 
+  if attribute_type_map[attributes[0]] == 'Numerical_int': 
     for i in numerical_int_preprocess(dataset[attributes[0]]): yield i
-  elif attribute_type_map[attribute] == 'Numerical_float': 
+  elif attribute_type_map[attributes[0]] == 'Numerical_float': 
     for i in numerical_float_preprocess(dataset[attributes[0]], decimal_accuracy): yield i
 
 def numerical_2d(dataset, attributes, attribute_type_map, decimal_accuracy) -> list:
