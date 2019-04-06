@@ -6,6 +6,39 @@ import argparse
 from hashlib import sha256
 from utils import sort_attributes, mixed_preprocess, categorical_1d, categorical_2d, numerical_1d, numerical_2d
 
+available_attributes = [
+    'Ethnicity',
+    'Gender',
+    'Address',
+    'Patient Age',
+    'Heart rate',
+    'Height (cm)',
+    'Weight (kg)',
+    'LVEDV (ml)',
+    'LVESV (ml)',
+    'LVSV (ml)',
+    'LVEF (%)',
+    'LV Mass (g)',
+    'RVEDV (ml)',
+    'RVESV (ml)',
+    'RVSV (ml)',
+    'RVEF (%)',
+    'RV Mass (g)',
+    'BMI (kg/msq)',
+    'BMI (kg/m²)',
+    'BSA',
+    'BSA (msq)',
+    'CO (L/min)',
+    'Central PP (mmHg)',
+    'DBP (mmHg)',
+    'LVEF (ratio)',
+    'MAP',
+    'PAP (mmHg)',
+    'PP (mmHg)',
+    'RVEF (ratio)',
+    'SBP (mmHg)',
+    'SVR (mmHg/L/min)'
+]
 
 def preprocess(
         computation_request,
@@ -13,8 +46,8 @@ def preprocess(
         attributes,
         data_file_name,
         mapping_file_name,
-        filters=None,
-        decimal_accuracy=5):
+        decimal_accuracy=5,
+        filters=None):
     ''' Function to apply preprocessing to dataset.
         computation_request: 'str', one of '1d_categorical_histogram', '2d_categorical_histogram', '1d_numerical_histogram', '2d_numerical_histogram', '2d_mixed_histogram', 'secure_aggregation',
         computation_request_id: 'str', Unique id of computation request,
@@ -26,6 +59,7 @@ def preprocess(
 
     data = pd.read_csv(data_file_name)
     attribute_type_map = {}
+
     for index, value in data.dtypes.iteritems():
         if str(value) == 'object':
             attribute_type_map[index] = 'Categorical'
@@ -35,27 +69,17 @@ def preprocess(
             attribute_type_map[index] = 'Numerical_int'
         else:
             raise NotImplementedError
-    assert isinstance(
-        mapping_file_name, str), "'mapping_file_name' must be of type 'str'"
-    assert isinstance(
-        decimal_accuracy, int), "'decimal_accuracy' must be of type 'int'"
-    assert isinstance(computation_request_id,
-                      str), "'computation_request_id' must be of type 'str'"
-    assert isinstance(
-        data_file_name, str), "'data_file_name' must be of type 'str'"
-    assert set(attributes) <= set(['Gender', 'Address', 'Patient Age', 'Ethnicity', 'Heart rate', 'Height (cm)', 'Weight (kg)', 'LVEDV (ml)', 'LVESV (ml)', 'LVSV (ml)', 'LVEF (%)', 'LV Mass (g)', 'RVEDV (ml)', 'RVESV (ml)', 'RVSV (ml)', 'RVEF (%)', 'RV Mass (g)',
-                                   'BMI (kg/msq)', 'BMI (kg/m²)', 'BSA', 'BSA (msq)', 'CO (L/min)', 'Central PP (mmHg)', 'DBP (mmHg)', 'LVEF (ratio)', 'MAP', 'PAP (mmHg)', 'PP (mmHg)', 'RVEF (ratio)', 'SBP (mmHg)', 'SVR (mmHg/L/min)']), 'Some requested attribute is not available'
+
+
+    assert set(attributes) <= set(available_attributes), 'Some requested attribute is not available'
     assert decimal_accuracy > 0, "Decimal accuracy must be positive"
     assert decimal_accuracy <= 10, "Maximal supported decimal accuracy is 10 digits"
-    assert (filters is None) or (isinstance(filters, dict)
-                                 ), "Input 'filters' must be a dictionary or None"
+    assert (filters is None) or (isinstance(filters, dict)), "Input 'filters' must be a dictionary or None"
+
     if isinstance(filters, dict):
         assert set(
             filters.keys()) <= set(
             data.columns), "Input 'filters' keys must be data attributes"
-
-    assert computation_request in ['1d_categorical_histogram', '2d_categorical_histogram', '1d_numerical_histogram', '2d_numerical_histogram', '2d_mixed_histogram',
-                                   'secure_aggregation'], "Unknown computation request; Give one of the following types '1d_categorical_histogram', '2d_categorical_histogram', '1d_numerical_histogram', '2d_numerical_histogram', '2d_mixed_histogram', 'secure_aggregation'"
 
     # this sorting mechanism ensures cat -> integer -> float
     attributes = sorted(attributes, key=sort_attributes(attribute_type_map))
@@ -80,6 +104,7 @@ def preprocess(
 
     attributeToInt, intToAttribute = {}, {}
     cellsX, cellsY = None, None
+
     for i, attribute in enumerate(attributes):
         attributeToInt[attribute] = i
         intToAttribute[i] = attribute
@@ -87,6 +112,7 @@ def preprocess(
             sizeAlloc += dataset_size
         else:
             sizeAlloc += 2 * dataset_size
+
     with open(mapping_file_name, 'r') as f:
         attributeToValueMap = json.load(f)
 
@@ -97,7 +123,7 @@ def preprocess(
     try:
         os.mkdir(output_directory)
     except Exception:
-        pass
+        pass  # should we pass the warning ?
 
     if computation_request == '2d_mixed_histogram':
         output = mixed_preprocess(
@@ -159,10 +185,9 @@ def preprocess(
                    'hash256': SHA256.hexdigest(),
                    'attributeToInt': attributeToInt,
                    'intToAttribute': intToAttribute}
+
     with open(output_directory + '/' + computation_request_id + '.json', 'w') as f:
         json.dump(json_output, f)
-
-    return 1
 
 
 def main():
@@ -204,9 +229,15 @@ def main():
             '2d_categorical_histogram'],
         type=str,
         help='Computation algorithm (default: %(default)s)')
+    parser.add_argument(
+        '-p',
+        '--precision',
+        default=5,
+        type=int,
+        help='The number of decimal digits to be consider for floats (default: %(default))')
     parser.add_argument('--version', action='version', version='%(prog)s 0.1')
     args = parser.parse_args()
-    data = preprocess(args.algorithm, args.computation, args.attributes, args.dataset, args.mapping)  # , filters = {"Medical Record Number":filter1, "RVEDV (ml)": filter2})
+    preprocess(args.algorithm, args.computation, args.attributes, args.dataset, args.mapping, args.precision)  # , filters = {"Medical Record Number":filter1, "RVEDV (ml)": filter2})
 
 
 if __name__ == '__main__':

@@ -33,7 +33,8 @@ attributes = [
     'PP (mmHg)',
     'RVEF (ratio)',
     'SBP (mmHg)',
-    'SVR (mmHg/L/min)']
+    'SVR (mmHg/L/min)'
+]
 
 
 def map(dataset, output):
