@@ -42,9 +42,14 @@ class Client extends EventEmitter {
   }
 
   async dataSize () {
-    const dataset = `${DATASET_FOLDER}/Client_data${this.id}.txt` // file name should change. In real enviroments each client is in different machine.
-    const dataSize = await this.readFirstLine(dataset)
-    this.emit('data-size', { id: this.id, dataSize })
+    try {
+      const dataset = `${DATASET_FOLDER}/Client_data${this.id}.txt` // file name should change. In real enviroments each client is in different machine.
+      const dataSize = await this.readFirstLine(dataset)
+      this.emit('data-size', { id: this.id, dataSize })
+    } catch (e) {
+      console.log(e)
+      this.emit('error', { id: this.id, errors: [e.message] })
+    }
   }
 
   run () {
