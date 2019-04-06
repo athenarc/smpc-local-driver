@@ -20,14 +20,13 @@ def sort_attributes(attribute_type_mapping):
     return len(attribute_type_mapping[type_])
   return sorting
 
-def categorical_preprocess(unprocessed_attribute) -> list:
-  value_map = {}
+def categorical_preprocess(unprocessed_attribute, valueToIntMap) -> list:
   count = 0
   for data_instance in unprocessed_attribute.values:
-    if data_instance in value_map.keys(): yield value_map[data_instance]
+    if data_instance in valueToIntMap.keys(): yield valueToIntMap[data_instance]
     else: 
-      value_map[data_instance] = count
-      yield value_map[data_instance]
+      valueToIntMap[data_instance] = count
+      yield valueToIntMap[data_instance]
       count += 1
 
 def numerical_float_preprocess(unprocessed_attribute, decimal_accuracy) -> list:
@@ -52,14 +51,14 @@ def numerical_int_preprocess(unprocessed_attribute) -> list:
     yield data_instance_as_string
     yield 0
 
-def mixed_preprocess(dataset, attributes, attribute_type_map, decimal_accuracy) -> list:
+def mixed_preprocess(dataset, attributes, attribute_type_map, decimal_accuracy, attributeToValueMap) -> list:
   assert len(attributes) == 2, "Need 2 attributes for a '2d_mixed_histogram' computation request"
   assert (attribute_type_map[attributes[0]] == 'Categorical') or (attribute_type_map[attributes[1]] == 'Categorical'), "Need at least one categorical attribute for '2d-mixed computation request'"
   assert (attribute_type_map[attributes[0]] != 'Categorical') or (attribute_type_map[attributes[1]] != 'Categorical'), "Need at least one non-categorical attribute for '2d-mixed computation request'"
   processed_data = []
   for attribute in attributes:
     if attribute_type_map[attribute] == 'Categorical': 
-      processed_data.append(categorical_preprocess(dataset[attribute]))
+      processed_data.append(categorical_preprocess(dataset[attribute], attributeToValueMap[attribute]))
     if attribute_type_map[attribute] == 'Numerical_int': 
       processed_data.append(numerical_int_preprocess(dataset[attribute]))
     if attribute_type_map[attribute] == 'Numerical_float': 
@@ -69,10 +68,10 @@ def mixed_preprocess(dataset, attributes, attribute_type_map, decimal_accuracy) 
     yield next(processed_data[1])
     yield next(processed_data[1])
 
-def categorical_1d(dataset, attributes, attribute_type_map) -> list:
+def categorical_1d(dataset, attributes, attribute_type_map, attributeToValueMap) -> list:
   assert len(attributes) == 1, "Need 1 attribute for a '1d_categorical_histogram' computation request"
   assert (attribute_type_map[attributes[0]] == 'Categorical'), "Need a categorical attribute for '1d_categorical_histogram'"
-  for i in categorical_preprocess(dataset[attributes[0]]): yield i
+  for i in categorical_preprocess(dataset[attributes[0]], attributeToValueMap[attributes[0]]): yield i
   
 
 def numerical_1d(dataset, attributes, attribute_type_map, decimal_accuracy) -> list:
@@ -98,12 +97,12 @@ def numerical_2d(dataset, attributes, attribute_type_map, decimal_accuracy) -> l
     yield next(processed_data[1])
     yield next(processed_data[1])
 
-def categorical_2d(dataset, attributes, attribute_type_map) -> list:
+def categorical_2d(dataset, attributes, attribute_type_map, attributeToValueMap) -> list:
   assert len(attributes) == 2, "Need 2 attributes for a '2d_categorical_histogram' computation request"
   assert (attribute_type_map[attributes[0]] == 'Categorical') and (attribute_type_map[attributes[1]] == 'Categorical'), "Need two categorical attributes for '2d-categorical_histogram' computation request"
   processed_data = []
   for attribute in attributes:    
-    processed_data.append(categorical_preprocess(dataset[attribute]))
+    processed_data.append(categorical_preprocess(dataset[attribute], attributeToValueMap[attribute]))
   for i in iter(range(dataset.shape[0])):
     yield next(processed_data[0])
     yield next(processed_data[1])
@@ -160,8 +159,18 @@ def preprocess(computation_request, computation_request_id, attributes, data_fil
 
   delete_cols = set(data.columns) - set(attributes) 
   data = data.drop(list(delete_cols), axis = 1)
-  gc.collect()
   dataset_size = dataset.shape[0]
+  
+  attributeToValueMap, attributeToInverseValueMap, attributeToInt, intToAttribute = {}, None, {}, {}
+  for i, attribute in enumerate(attributes):
+    attributeToInt[attribute] = i 
+    intToAttribute[i] = attribute
+    if attribute_type_map[attribute] == 'Categorical':
+      attributeToValueMap[attribute] = {}
+  if attributeToValueMap == {}:
+    attributeToValueMap = None
+  
+  gc.collect()
   
   output_directory = '/home/gpik/smpc-local-driver/datasets/' + computation_request_id
 
@@ -171,10 +180,10 @@ def preprocess(computation_request, computation_request_id, attributes, data_fil
     pass
 
   if computation_request == '2d_mixed_histogram':
-    output = mixed_preprocess(dataset, attributes, attribute_type_map, decimal_accuracy)
+    output = mixed_preprocess(dataset, attributes, attribute_type_map, decimal_accuracy, attributeToValueMap)
     
   elif computation_request == '1d_categorical_histogram':
-    output = categorical_1d(dataset, attributes, attribute_type_map)
+    output = categorical_1d(dataset, attributes, attribute_type_map, attributeToValueMap)
 
   elif computation_request == '1d_numerical_histogram':
     output = numerical_1d(dataset, attributes, attribute_type_map, decimal_accuracy)
@@ -186,7 +195,7 @@ def preprocess(computation_request, computation_request_id, attributes, data_fil
     output = numerical_2d(dataset, attributes, attribute_type_map, decimal_accuracy)
 
   elif computation_request == '2d_categorical_histogram':
-    output = categorical_2d(dataset, attributes, attribute_type_map)
+    output = categorical_2d(dataset, attributes, attribute_type_map, attributeToValueMap)
 
   with open(output_directory + '/' + computation_request_id + '.txt', 'w') as f:
     for item in output:
@@ -196,8 +205,11 @@ def preprocess(computation_request, computation_request_id, attributes, data_fil
     SHA256 = sha256()    
     for byte_block in iter(lambda: f.read(4096),b""):
       SHA256.update(byte_block)    
+  
+  if attributeToValueMap is not None: attributeToInverseValueMap = {key: dict(zip(value.values(), value.keys())) for key, value in attributeToValueMap.items()}
 
-  json_output = {'precision': 10**(-decimal_accuracy), 'dataSize': dataset_size, 'hash256': SHA256.hexdigest() }  #
+  json_output = {'precision': 10**(-decimal_accuracy), 'dataSize': dataset_size, 'hash256': SHA256.hexdigest(), 'attributeToInt': attributeToInt, \
+'intToAttribute': intToAttribute, 'attributeToValueMap': attributeToValueMap, "attributeToInverseValueMap": attributeToInverseValueMap  }  #
   with open(output_directory + '/' + computation_request_id + '.json', 'w') as f:
     json.dump(json_output, f)  
   
@@ -207,6 +219,6 @@ def preprocess(computation_request, computation_request_id, attributes, data_fil
 if __name__ == "__main__":
   computation_request_id = 'test_id_1'
   attribute_type_map = {"Gender": 'Categorical', "Address": 'Categorical', 'RVEDV (ml)': 'Numerical_float', 'Medical Record Number': "Numerical_int" }
-  attributes = ['Gender','Address']#, 'RVEDV (ml)']#['Medical Record Number', 'RVEDV (ml)']#'Medical Record Number','RVEDV (ml)'] #'Gender']#, 
+  attributes = ['Gender','Address']#,'Address']#, 'Address']#,'Address']#, 'RVEDV (ml)']#['Medical Record Number', 'RVEDV (ml)']#'Medical Record Number','RVEDV (ml)'] #'Gender']#, 
   computation_request = '2d_categorical_histogram' #'2d_mixed_histogram'
   data = preprocess(computation_request, computation_request_id, attributes, '/home/gpik/Documents/Data/cvi_identified_small.csv')#, filters = {"Medical Record Number":filter1, "RVEDV (ml)": filter2})
