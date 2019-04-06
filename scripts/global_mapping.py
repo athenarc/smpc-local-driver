@@ -1,8 +1,9 @@
 import pandas as pd
 import json
+import argparse
 
-data = pd.read_csv('../cvi_identified_small.csv')
 attributes = [
+    'Ethnicity',
     'Gender',
     'Address',
     'Patient Age',
@@ -34,23 +35,50 @@ attributes = [
     'SBP (mmHg)',
     'SVR (mmHg/L/min)']
 
-globalMap = {}
-catAttributes = []
-for index, value in data.dtypes.iteritems():
 
-    if (str(index) in attributes) and (str(value) == 'object'):
-        catAttributes += [index]
-        globalMap[index] = {}
+def map(dataset, output):
+    data = pd.read_csv(dataset)
+    globalMap = {}
+    catAttributes = []
+    for index, value in data.dtypes.iteritems():
 
-data = data[catAttributes]
-for i in catAttributes:
-    count = 0
-    for j in iter(range(data.shape[0])):
-        if data[i].values[j] in globalMap[i].keys():
-            pass
-        else:
-            globalMap[i][data[i].values[j]] = count
-            count += 1
+        if (str(index) in attributes) and (str(value) == 'object'):
+            catAttributes += [index]
+            globalMap[index] = {}
 
-with open('../mapping.json', 'w') as f:
-    json.dump(globalMap, f)
+    data = data[catAttributes]
+    for i in catAttributes:
+        count = 0
+        for j in iter(range(data.shape[0])):
+            if data[i].values[j] in globalMap[i].keys():
+                pass
+            else:
+                globalMap[i][data[i].values[j]] = count
+                count += 1
+
+    with open(output, 'w') as f:
+        json.dump(globalMap, f)
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description='SMPC global mapping generator')
+    parser.add_argument(
+        '-d',
+        '--dataset',
+        required=True,
+        type=str,
+        help='Dataset file (required)')
+    parser.add_argument(
+        '-o',
+        '--output',
+        required=True,
+        type=str,
+        help='Output mapping file (required)')
+    parser.add_argument('--version', action='version', version='%(prog)s 0.1')
+    args = parser.parse_args()
+    map(args.dataset, args.output)
+
+
+if __name__ == '__main__':
+    main()

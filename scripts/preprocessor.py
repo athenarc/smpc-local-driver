@@ -1,4 +1,10 @@
-from utils import *
+import pandas as pd
+import gc
+import json
+import os
+import argparse
+from hashlib import sha256
+from utils import sort_attributes, mixed_preprocess, categorical_1d, categorical_2d, numerical_1d, numerical_2d
 
 
 def preprocess(
@@ -37,7 +43,7 @@ def preprocess(
                       str), "'computation_request_id' must be of type 'str'"
     assert isinstance(
         data_file_name, str), "'data_file_name' must be of type 'str'"
-    assert set(attributes) <= set(['Gender', 'Address', 'Patient Age', 'Heart rate', 'Height (cm)', 'Weight (kg)', 'LVEDV (ml)', 'LVESV (ml)', 'LVSV (ml)', 'LVEF (%)', 'LV Mass (g)', 'RVEDV (ml)', 'RVESV (ml)', 'RVSV (ml)', 'RVEF (%)', 'RV Mass (g)',
+    assert set(attributes) <= set(['Gender', 'Address', 'Patient Age', 'Ethnicity', 'Heart rate', 'Height (cm)', 'Weight (kg)', 'LVEDV (ml)', 'LVESV (ml)', 'LVSV (ml)', 'LVEF (%)', 'LV Mass (g)', 'RVEDV (ml)', 'RVESV (ml)', 'RVSV (ml)', 'RVEF (%)', 'RV Mass (g)',
                                    'BMI (kg/msq)', 'BMI (kg/m²)', 'BSA', 'BSA (msq)', 'CO (L/min)', 'Central PP (mmHg)', 'DBP (mmHg)', 'LVEF (ratio)', 'MAP', 'PAP (mmHg)', 'PP (mmHg)', 'RVEF (ratio)', 'SBP (mmHg)', 'SVR (mmHg/L/min)']), 'Some requested attribute is not available'
     assert decimal_accuracy > 0, "Decimal accuracy must be positive"
     assert decimal_accuracy <= 10, "Maximal supported decimal accuracy is 10 digits"
@@ -157,3 +163,51 @@ def preprocess(
         json.dump(json_output, f)
 
     return 1
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description='SMPC local drive preprocessor')
+    parser.add_argument(
+        '-c',
+        '--computation',
+        required=True,
+        type=str,
+        help='The ID of the computation (required)')
+    parser.add_argument(
+        '-d',
+        '--dataset',
+        required=True,
+        type=str,
+        help='Dataset file (required)')
+    parser.add_argument(
+        '-m',
+        '--mapping',
+        required=True,
+        type=str,
+        help='Mapping file (required)')
+    parser.add_argument(
+        '-a',
+        '--attributes',
+        nargs='*',
+        help='List of space seperated attributes which will be included in the output file (default: all)')
+    parser.add_argument(
+        '-g',
+        '--algorithm',
+        default='1d_categorical_histogram',
+        choices=[
+            '2d_mixed_histogram',
+            '1d_categorical_histogram',
+            '1d_numerical_histogram',
+            'secure_aggregation',
+            '2d_numerical_histogram',
+            '2d_categorical_histogram'],
+        type=str,
+        help='Computation algorithm (default: %(default)s)')
+    parser.add_argument('--version', action='version', version='%(prog)s 0.1')
+    args = parser.parse_args()
+    data = preprocess(args.algorithm, args.computation, args.attributes, args.dataset, args.mapping)  # , filters = {"Medical Record Number":filter1, "RVEDV (ml)": filter2})
+
+
+if __name__ == '__main__':
+    main()
