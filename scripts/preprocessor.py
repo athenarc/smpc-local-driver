@@ -57,6 +57,7 @@ def preprocess(computation_request, computation_request_id, attributes, data_fil
   sizeAlloc = 0
   
   attributeToInt, intToAttribute = {}, {}
+  cellsX, cellsY = None, None
   for i, attribute in enumerate(attributes):
     attributeToInt[attribute] = i 
     intToAttribute[i] = attribute
@@ -66,7 +67,7 @@ def preprocess(computation_request, computation_request_id, attributes, data_fil
       sizeAlloc += 2*dataset_size
   with open(mapping_file_name, 'r') as f:
     attributeToValueMap = json.load(f) 
-
+  
   gc.collect()
   
   output_directory = '/home/gpik/smpc-local-driver/datasets/' + computation_request_id
@@ -78,9 +79,11 @@ def preprocess(computation_request, computation_request_id, attributes, data_fil
 
   if computation_request == '2d_mixed_histogram':
     output = mixed_preprocess(dataset, attributes, attribute_type_map, decimal_accuracy, attributeToValueMap)
-    
+    cellsX = len(attributeToValueMap[intToAttribute[0]])    
+
   elif computation_request == '1d_categorical_histogram':
     output = categorical_1d(dataset, attributes, attribute_type_map, attributeToValueMap)
+    cellsX = len(attributeToValueMap[intToAttribute[0]])    
 
   elif computation_request == '1d_numerical_histogram':
     output = numerical_1d(dataset, attributes, attribute_type_map, decimal_accuracy)
@@ -92,18 +95,20 @@ def preprocess(computation_request, computation_request_id, attributes, data_fil
     output = numerical_2d(dataset, attributes, attribute_type_map, decimal_accuracy)
 
   elif computation_request == '2d_categorical_histogram':
+    cellsX = len(attributeToValueMap[intToAttribute[0]])
+    cellsY = len(attributeToValueMap[intToAttribute[1]])
     output = categorical_2d(dataset, attributes, attribute_type_map, attributeToValueMap)
 
   with open(output_directory + '/' + computation_request_id + '.txt', 'w') as f:
     for item in output:
      f.write("%s\n" % item)
-    
+  
   with open(output_directory + '/' + computation_request_id + '.txt',"rb") as f:
     SHA256 = sha256()    
     for byte_block in iter(lambda: f.read(4096),b""):
       SHA256.update(byte_block)    
 
-  json_output = {'precision': 10**(-decimal_accuracy), 'sizeAlloc': sizeAlloc, 'dataSize': dataset_size, 'hash256': SHA256.hexdigest(), 'attributeToInt': attributeToInt, \
+  json_output = {'precision': 10**(-decimal_accuracy), 'sizeAlloc': sizeAlloc, 'cellsX': cellsX, 'cellsY': cellsY, 'dataSize': dataset_size, 'hash256': SHA256.hexdigest(), 'attributeToInt': attributeToInt, \
 'intToAttribute': intToAttribute}  #
   with open(output_directory + '/' + computation_request_id + '.json', 'w') as f:
     json.dump(json_output, f)  
