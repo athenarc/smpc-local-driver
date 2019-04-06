@@ -40,19 +40,16 @@ def map(dataset, output):
     data = pd.read_csv(dataset)
     globalMap = {}
     catAttributes = []
-    for index, value in data.dtypes.iteritems():
-
+    for index, value in data.dtypes.items():  # in python3 items is like iteritems of python2
         if (str(index) in attributes) and (str(value) == 'object'):
-            catAttributes += [index]
+            catAttributes.append(index)
             globalMap[index] = {}
 
     data = data[catAttributes]
     for i in catAttributes:
         count = 0
         for j in iter(range(data.shape[0])):
-            if data[i].values[j] in globalMap[i].keys():
-                pass
-            else:
+            if not data[i].values[j] in globalMap[i].keys():
                 globalMap[i][data[i].values[j]] = count
                 count += 1
 
