@@ -24,10 +24,12 @@ const handleConnection = (ws) => {
 
   ws.on('close', (data) => {
     console.log('Connection Closed: ', data)
+    client.terminate()
   })
 
   ws.on('error', (err) => {
     console.log(err)
+    client.terminate()
   })
 
   ws.on('message', (data) => {
