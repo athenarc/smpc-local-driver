@@ -5,7 +5,6 @@ import argparse
 attributes = [
     'Ethnicity',
     'Gender',
-    'Address',
     'Patient Age',
     'Heart rate',
     'Height (cm)',

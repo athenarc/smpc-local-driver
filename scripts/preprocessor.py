@@ -9,7 +9,6 @@ from utils import sort_attributes, mixed_preprocess, categorical_1d, categorical
 available_attributes = [
     'Ethnicity',
     'Gender',
-    'Address',
     'Patient Age',
     'Heart rate',
     'Height (cm)',
