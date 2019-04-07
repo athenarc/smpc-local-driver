@@ -176,7 +176,7 @@ def preprocess(
         for byte_block in iter(lambda: f.read(4096), b""):
             SHA256.update(byte_block)
 
-    json_output = {'precision': 10**(-decimal_accuracy),
+    json_output = {'precision': '{0:.{1}f}'.format(10**(-decimal_accuracy), decimal_accuracy),
                    'sizeAlloc': sizeAlloc,
                    'cellsX': cellsX,
                    'cellsY': cellsY,
