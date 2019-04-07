@@ -54,7 +54,7 @@ def map(dataset, output):
                 count += 1
 
     with open(output, 'w') as f:
-        json.dump(globalMap, f)
+        json.dump(globalMap, f, indent=4)
 
 
 def main():

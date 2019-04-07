@@ -186,7 +186,7 @@ def preprocess(
                    'intToAttribute': intToAttribute}
 
     with open(output_directory + '/' + computation_request_id + '.json', 'w') as f:
-        json.dump(json_output, f)
+        json.dump(json_output, f, indent=4)
 
 
 def main():
