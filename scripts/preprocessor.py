@@ -235,7 +235,7 @@ def main():
         '--precision',
         default=5,
         type=int,
-        help='The number of decimal digits to be consider for floats (default: %(default))')
+        help='The number of decimal digits to be consider for floats (default: %(default)s)')
     parser.add_argument('--version', action='version', version='%(prog)s 0.1')
     args = parser.parse_args()
     preprocess(args.algorithm, args.computation, args.attributes, args.dataset, args.mapping, args.precision)  # , filters = {"Medical Record Number":filter1, "RVEDV (ml)": filter2})
