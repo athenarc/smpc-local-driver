@@ -76,6 +76,7 @@ class Client extends EventEmitter {
 
   terminate () {
     if (this.client) {
+      this.client.removeAllListeners()
       this.client.stdin.pause()
       this.client.kill()
       this.client = null
