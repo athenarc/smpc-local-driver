@@ -40,6 +40,8 @@ const handleConnection = (ws) => {
 
     if (data.message === 'data-size') {
       client.dataSize()
+    if (data.message === 'job-info') {
+      client.setJob({ ...data.job })
     }
 
     if (data.message === 'import') {
