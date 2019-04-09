@@ -41,6 +41,7 @@ available_attributes = [
     'SVR (mmHg/L/min)'
 ]
 
+
 def preprocess(
         computation_request,
         computation_request_id,
@@ -57,7 +58,6 @@ def preprocess(
         filters: 'dict', maps attributes to filter functions that we want to apply,
         decimal_accuracy: 'int', how many decimal digits to consider for floats
     '''
-
     data = pd.read_csv(data_file_name)
     attribute_type_map = {}
 
@@ -70,7 +70,6 @@ def preprocess(
             attribute_type_map[index] = 'Numerical_int'
         else:
             raise NotImplementedError
-
 
     assert set(attributes) <= set(available_attributes), 'Some requested attribute is not available'
     assert decimal_accuracy > 0, "Decimal accuracy must be positive"
@@ -119,12 +118,10 @@ def preprocess(
 
     gc.collect()
 
-    output_directory = '../datasets/' + computation_request_id
+    output_directory = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../datasets/', computation_request_id)
 
-    try:
+    if (not os.path.exists(output_directory)):
         os.mkdir(output_directory)
-    except Exception:
-        pass  # should we pass the warning ?
 
     if computation_request == '2d_mixed_histogram':
         output = mixed_preprocess(
