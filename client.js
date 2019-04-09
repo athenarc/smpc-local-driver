@@ -38,10 +38,12 @@ const handleConnection = (ws) => {
     print(`Message: ${data}`)
     data = unpack(data)
 
-    if (data.message === 'data-size') {
-      client.dataSize()
     if (data.message === 'job-info') {
       client.setJob({ ...data.job })
+    }
+
+    if (data.message === 'data-info') {
+      client.preprocess()
     }
 
     if (data.message === 'import') {
@@ -53,8 +55,8 @@ const handleConnection = (ws) => {
     }
   })
 
-  client.on('data-size', (msg) => {
-    ws.send(pack({ message: 'data-size', ...msg }))
+  client.on('data-info', (msg) => {
+    ws.send(pack({ message: 'data-info', ...msg }))
   })
 
   client.on('error', (msg) => {
