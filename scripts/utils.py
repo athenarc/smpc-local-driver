@@ -32,17 +32,20 @@ def numerical_float_preprocess(unprocessed_attribute, decimal_accuracy) -> list:
         accuracy_difference = abs_exponent - decimal_accuracy
         assert len(data_instance_as_decimal.as_tuple(
         ).digits[:-abs_exponent]) <= 10, 'Integer values are too large'
-
-        if accuracy_difference >= 0:
-            yield int("".join(str(i) for i in data_instance_as_decimal.as_tuple().digits[:-abs_exponent]))
-            yield int("".join(str(i) for i in data_instance_as_decimal.as_tuple().digits[-abs_exponent:-accuracy_difference]))
+        if abs(data_instance) >= 1:
+            if accuracy_difference >= 0:
+                yield int("".join(str(i) for i in data_instance_as_decimal.as_tuple().digits[:-abs_exponent]))
+                yield int("".join(str(i) for i in data_instance_as_decimal.as_tuple().digits[-abs_exponent:-accuracy_difference]))    
+            else:
+                yield int("".join(str(i) for i in data_instance_as_decimal.as_tuple().digits[:-abs_exponent]))
+                yield int("".join(str(i) for i in data_instance_as_decimal.as_tuple().digits[-abs_exponent:] + ['0'] * (-accuracy_difference)))
         else:
-            yield int("".join(str(i) for i in data_instance_as_decimal.as_tuple().digits[:-abs_exponent]))
-            yield int("".join(str(i) for i in data_instance_as_decimal.as_tuple().digits[-abs_exponent:] + ['0'] * (-accuracy_difference)))
+            yield 0
+            yield int("".join(str(i) for i in data_instance_as_decimal.as_tuple().digits[0:decimal_accuracy]))    
 
+        
 
 def numerical_int_preprocess(unprocessed_attribute) -> list:
-    processed_attribute = []
     for data_instance in unprocessed_attribute.values:
         data_instance_as_string = str(data_instance)
         assert len(data_instance_as_string) <= 10, 'Integer values are too large'
@@ -71,7 +74,7 @@ def mixed_preprocess(dataset, attributes, attribute_type_map, decimal_accuracy, 
                 numerical_float_preprocess(
                     dataset[attribute],
                     decimal_accuracy))
-    for i in iter(range(dataset.shape[0])):
+    for _ in iter(range(dataset.shape[0])):
         yield next(processed_data[0])
         yield next(processed_data[1])
         yield next(processed_data[1])

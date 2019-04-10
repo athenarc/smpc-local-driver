@@ -86,6 +86,7 @@ def preprocess(
 
     if filters is None:
         dataset = data[attributes]
+        dataset = dataset.dropna(axis = 0)
     else:
         valid_indices = []
         for i in range(data.shape[0]):
@@ -96,6 +97,7 @@ def preprocess(
                 valid_indices.append(i)
         dataset = data.iloc[valid_indices]
         dataset = dataset[attributes]
+        dataset = dataset.dropna(axis = 0)
 
     delete_cols = set(data.columns) - set(attributes)
     data = data.drop(list(delete_cols), axis=1)
