@@ -59,7 +59,7 @@ class Client extends EventEmitter {
 
     const attr = this.job.attributes.map(a => `"${a.name}"`)
     const args = [`-c ${this.job.id}`, `-d ${path.resolve(__dirname, DATASET)}`, `-m ${GLOBAL_FOLDER}/mapping.json`, `-a ${attr.join(' ')}`, `-g ${this.job.algorithm}`]
-    this.preprocessCMD = spawn(PREPROCESS_CMD, args, { cwd: SCALE, shell: true })
+    this.preprocessCMD = spawn(PREPROCESS_CMD, args, { cwd: SCALE, shell: true, detached: true })
 
     this.preprocessCMD.stderr.on('data', (data) => { console.log(data.toString()) })
     this.preprocessCMD.on('exit', async (code) => {
@@ -79,7 +79,7 @@ class Client extends EventEmitter {
   }
 
   run () {
-    this.client = spawn(CLIENT_CMD, [this.id, `${DATASET_FOLDER}/${this.job.id}/${this.job.id}.txt`], { cwd: SCALE, shell: true })
+    this.client = spawn(CLIENT_CMD, [this.id, `${DATASET_FOLDER}/${this.job.id}/${this.job.id}.txt`], { cwd: SCALE, shell: true, detached: true })
 
     this.client.stdout.on('data', (data) => {
       console.log(data.toString())
@@ -104,6 +104,9 @@ class Client extends EventEmitter {
     if (this.client) {
       this.client.removeAllListeners()
       this.client.stdin.pause()
+      try {
+        process.kill(-this.client.pid)
+      } catch (e) {}
       this.client.kill()
       this.client = null
     }
@@ -111,6 +114,9 @@ class Client extends EventEmitter {
     if (this.preprocessCMD) {
       this.preprocessCMD.removeAllListeners()
       this.preprocessCMD.stdin.pause()
+      try {
+        process.kill(-this.preprocessCMD.pid)
+      } catch (e) {}
       this.preprocessCMD.kill()
       this.preprocessCMD = null
     }
