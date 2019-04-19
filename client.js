@@ -1,11 +1,21 @@
 require('dotenv').config()
 
 const _ = require('lodash')
+const https = require('https')
+const fs = require('fs')
 const WebSocket = require('ws')
 const Client = require('./ClientSMPC')
 const { print, pack, unpack } = require('./helpers')
 
 const PORT = process.env.PORT || 3004
+
+if (_.isEmpty(process.env.ROOT_CA)) {
+  throw new Error('HTTPS root CA path must be defined!')
+}
+
+if (_.isEmpty(process.env.PEM_KEY)) {
+  throw new Error('HTTPS key path must be defined!')
+}
 
 if (_.isEmpty(process.env.SMPC_ENGINE)) {
   throw new Error('SMPC Engine absolute path not defined!')
