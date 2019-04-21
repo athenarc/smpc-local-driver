@@ -25,8 +25,8 @@ available_attributes = [
     'RVSV (ml)',
     'RVEF (%)',
     'RV Mass (g)',
-    'BMI (kg/msq)',
     'BMI (kg/m²)',
+    'BSA (m²)',
     'BSA',
     'BSA (msq)',
     'CO (L/min)',
@@ -60,7 +60,7 @@ def preprocess(
     '''
     data = pd.read_csv(data_file_name)
     attribute_type_map = {}
-
+    assert set(attributes) <= set(data.dtypes.keys()), 'Some requested attribute is not available'
     for index, value in data.dtypes.iteritems():
         if str(value) == 'object':
             attribute_type_map[index] = 'Categorical'
