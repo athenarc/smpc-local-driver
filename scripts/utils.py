@@ -32,17 +32,24 @@ def numerical_float_preprocess(unprocessed_attribute, decimal_accuracy) -> list:
         accuracy_difference = abs_exponent - decimal_accuracy
         assert len(data_instance_as_decimal.as_tuple(
         ).digits[:-abs_exponent]) <= 10, 'Integer values are too large'
-        if abs(data_instance) >= 1:
-            if accuracy_difference >= 0:
-                yield int("".join(str(i) for i in data_instance_as_decimal.as_tuple().digits[:-abs_exponent]))
-                yield int("".join(str(i) for i in data_instance_as_decimal.as_tuple().digits[-abs_exponent:-accuracy_difference]))    
-            else:
-                yield int("".join(str(i) for i in data_instance_as_decimal.as_tuple().digits[:-abs_exponent]))
-                yield int("".join(str(i) for i in data_instance_as_decimal.as_tuple().digits[-abs_exponent:] + ['0'] * (-accuracy_difference)))
-        else:
-            yield 0
-            yield int("".join(str(i) for i in data_instance_as_decimal.as_tuple().digits[0:decimal_accuracy]))    
-
+        
+        if abs_exponent == 0:
+            yield int(data_instance_as_decimal)
+            yield int("".join(['0'] * (-accuracy_difference)))
+        else:    
+            if abs(data_instance) >= 1:
+                if accuracy_difference >= 0:
+                    yield int("".join(str(i) for i in data_instance_as_decimal.as_tuple().digits[:-abs_exponent]))
+                    yield int("".join(str(i) for i in data_instance_as_decimal.as_tuple().digits[-abs_exponent:-accuracy_difference]))    
+                    
+                else:
+                    yield int("".join(str(i) for i in data_instance_as_decimal.as_tuple().digits[:-abs_exponent]))
+                    yield int("".join(str(i) for i in data_instance_as_decimal.as_tuple().digits[-abs_exponent:]))
+            else:   
+                yield 0
+                yield int("".join(str(i) for i in data_instance_as_decimal.as_tuple().digits[0:decimal_accuracy]))    
+        
+           
         
 
 def numerical_int_preprocess(unprocessed_attribute) -> list:
