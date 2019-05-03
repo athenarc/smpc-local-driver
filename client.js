@@ -29,6 +29,8 @@ const server = https.createServer({
   ca: fs.readFileSync(process.env.ROOT_CA, { encoding: 'utf-8' }),
   cert: fs.readFileSync(process.env.PEM_CERT),
   key: fs.readFileSync(process.env.PEM_KEY),
+  requestCert: true,
+  rejectUnauthorized: true,
   port: PORT,
   clientTracking: true
 })
