@@ -7,40 +7,12 @@ import os
 import argparse
 from hashlib import sha256
 from utils import sort_attributes, mixed_preprocess, categorical_1d, categorical_2d, numerical_1d, numerical_2d
+import json
 
-available_attributes = [
-    'Ethnicity',
-    'Gender',
-    'Patient Age',
-    'Heart rate',
-    'Height (cm)',
-    'Weight (kg)',
-    'LVEDV (ml)',
-    'LVESV (ml)',
-    'LVSV (ml)',
-    'LVEF (%)',
-    'LV Mass (g)',
-    'RVEDV (ml)',
-    'RVESV (ml)',
-    'RVSV (ml)',
-    'RVEF (%)',
-    'RV Mass (g)',
-    'BMI (kg/m²)',
-    'BSA (m²)',
-    'BSA',
-    'BSA (msq)',
-    'CO (L/min)',
-    'Central PP (mmHg)',
-    'DBP (mmHg)',
-    'LVEF (ratio)',
-    'MAP',
-    'PAP (mmHg)',
-    'PP (mmHg)',
-    'RVEF (ratio)',
-    'SBP (mmHg)',
-    'SVR (mmHg/L/min)'
-]
+with open("../smpc-global/attributes.json") as attribute_file:
+    available_attribute_dicts = json.load(attribute_file)
 
+available_attributes = [Attribute['name'] for Attribute in available_attribute_dicts]
 
 def preprocess(
         computation_request,
