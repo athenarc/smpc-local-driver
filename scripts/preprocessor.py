@@ -7,12 +7,14 @@ import os
 import argparse
 from hashlib import sha256
 from utils import sort_attributes, mixed_preprocess, categorical_1d, categorical_2d, numerical_1d, numerical_2d
-import json
 
-with open("../smpc-global/attributes.json") as attribute_file:
+attributes_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../smpc-global/', 'attributes.json')
+
+with open(attributes_file) as attribute_file:
     available_attribute_dicts = json.load(attribute_file)
 
 available_attributes = [Attribute['name'] for Attribute in available_attribute_dicts]
+
 
 def preprocess(
         computation_request,
