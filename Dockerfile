@@ -4,6 +4,8 @@ RUN apt-get update && apt-get upgrade -y
 RUN apt-get install -y \
   yasm \
   python \
+  python3 \
+  python3-pip \
   gcc \
   g++ \
   cmake \
@@ -21,8 +23,8 @@ RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
 RUN echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list
 RUN apt-get update && apt-get install yarn -y
 
-RUN mkdir smpc-player
-COPY . /smpc-player
+RUN mkdir smpc-local-drive
+COPY . /smpc-local-drive
 
 RUN git clone https://github.com/Athena-MHMD/SCALE-MAMBA.git
 
@@ -50,9 +52,14 @@ RUN echo 'OSSL = /local/openssl' >> CONFIG.mine
 WORKDIR /SCALE-MAMBA/src
 RUN make
 
-WORKDIR /smpc-player
+WORKDIR /smpc-local-drive
 RUN ./install.sh
 
 RUN mkdir -p certs
+
+WORKDIR /smpc-local-drive/scripts
+RUN pip3 install -r requirements.txt
+
+WORKDIR /smpc-local-drive
 
 CMD ["node", "client.js"]
