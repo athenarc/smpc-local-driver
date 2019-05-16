@@ -4,3 +4,4 @@ git submodule update
 yarn install
 
 mkdir -p certs
+mkdir -p scale/certs
