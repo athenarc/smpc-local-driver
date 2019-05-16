@@ -10,7 +10,7 @@ services:
     volumes:
       - ./certs:/smpc-local-driver/certs
     ports:
-      - 3002:3002
+      - 3003:3003
     networks:
       - local_driver
 
