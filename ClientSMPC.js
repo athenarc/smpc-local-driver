@@ -10,8 +10,8 @@ const SCRIPTS = path.resolve(__dirname, 'scripts')
 const GLOBAL_FOLDER = path.resolve(__dirname, 'smpc-global')
 const CLIENT_CMD = `${SCALE}/Client-Api.x`
 const PREPROCESS_CMD = `python3 ${SCRIPTS}/preprocessor.py`
-const DATASET_FOLDER = process.env.DATASET_FILE || path.resolve(__dirname, 'datasets')
-const DATASET = '../data/cvi_identified.csv'
+const DATASET_FOLDER = process.env.DATASET_FOLDER || path.resolve(__dirname, 'datasets')
+const DATASET = process.env.DATASET || '../data/cvi_identified.csv'
 
 class Client extends EventEmitter {
   constructor (id) {
