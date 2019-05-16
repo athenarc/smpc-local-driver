@@ -9,6 +9,7 @@ services:
       - .env.production
     volumes:
       - ./certs:/smpc-local-driver/certs
+      - ./data:/smpc-local-driver/data
       - ./scale/certs:/SCALE-MAMBA/Cert-Store
     ports:
       - 3003:3003
