@@ -49,7 +49,6 @@ RUN echo 'OSSL = /local/openssl' >> CONFIG.mine
 WORKDIR /SCALE-MAMBA/src
 RUN make
 
-RUN mkdir -p smpc-local-drive
 COPY . /smpc-local-drive
 
 WORKDIR /smpc-local-drive
