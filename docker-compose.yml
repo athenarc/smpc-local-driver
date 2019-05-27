@@ -11,6 +11,7 @@ services:
       - ./certs:/smpc-local-driver/certs
       - ./data:/smpc-local-driver/data
       - ./scale/certs:/SCALE-MAMBA/Cert-Store
+      - ./scale/data:/SCALE-MAMBA/Data
     ports:
       - 3003:3003
     networks:
