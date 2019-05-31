@@ -55,6 +55,7 @@ WORKDIR /smpc-local-drive
 RUN ./install.sh
 
 RUN mkdir -p certs
+RUN mkdir -p datasets 
 
 WORKDIR /smpc-local-drive/scripts
 RUN pip3 install -r requirements.txt

@@ -2,3 +2,5 @@
 git submodule init
 git submodule update
 yarn install
+
+mkdir -p datasets
