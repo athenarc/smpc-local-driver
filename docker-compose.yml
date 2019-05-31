@@ -12,6 +12,7 @@ services:
       - ./data:/smpc-local-driver/data
       - ./scale/certs:/SCALE-MAMBA/Cert-Store
       - ./scale/data:/SCALE-MAMBA/Data
+      - smpc-local-driver-datasets:/smpc-local-driver/datasets
     ports:
       - 3003:3003
     networks:
@@ -20,3 +21,6 @@ services:
 networks:
   local_driver:
     name: smpc_local_driver
+
+volumes:
+  smpc-local-driver-datasets:
