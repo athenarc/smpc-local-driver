@@ -7,14 +7,13 @@ import os
 import argparse
 from hashlib import sha256
 from utils import sort_attributes, mixed_preprocess, categorical_1d, categorical_2d, numerical_1d, numerical_2d
+import xml.etree.ElementTree as ET
+import re 
 
 attributes_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../smpc-global/', 'attributes.json')
-
 with open(attributes_file) as attribute_file:
     available_attribute_dicts = json.load(attribute_file)
-
-available_attributes = [Attribute['name'] for Attribute in available_attribute_dicts]
-
+available_attributes = [Attribute for Attribute in available_attribute_dicts.keys()]
 
 def preprocess(
         computation_request,
@@ -32,7 +31,29 @@ def preprocess(
         filters: 'dict', maps attributes to filter functions that we want to apply,
         decimal_accuracy: 'int', how many decimal digits to consider for floats
     '''
-    data = pd.read_csv(data_file_name)
+    xml = ET.parse(data_file_name)
+    root = xml.getroot()
+    
+    string = "\{(.*?)\}"
+    prefix = re.search(string,root.tag)[0]
+
+    columns = {}
+
+    for tname in root.findall('.//' + prefix + 'ClinicalVariables'):
+
+        attribute = tname.find(prefix + 'TypeName').text
+        if attribute not in columns.keys():
+            columns[attribute] = []
+        try:
+            columns[attribute].append(int(tname.find(prefix + 'Value').text))
+        except Exception:
+            try:
+                columns[attribute].append(float(tname.find(prefix + 'Value').text))
+            except Exception:
+                columns[attribute].append(tname.find(prefix + 'Value').text)
+
+    data = pd.DataFrame.from_dict(columns)
+    del columns
     attribute_type_map = {}
     assert set(attributes) <= set(data.dtypes.keys()), 'Some requested attribute is not available'
     for index, value in data.dtypes.iteritems():
@@ -44,8 +65,7 @@ def preprocess(
             attribute_type_map[index] = 'Numerical_int'
         else:
             raise NotImplementedError
-
-    assert set(attributes) <= set(available_attributes), 'Some requested attribute is not available'
+    # assert set(attributes) <= set(available_attributes), 'Some requested attribute is not available'
     assert decimal_accuracy > 0, "Decimal accuracy must be positive"
     assert decimal_accuracy <= 10, "Maximal supported decimal accuracy is 10 digits"
     assert (filters is None) or (isinstance(filters, dict)), "Input 'filters' must be a dictionary or None"
@@ -94,12 +114,22 @@ def preprocess(
 
     gc.collect()
 
-    output_directory = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../datasets/', computation_request_id)
+    datasets_directory = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../datasets/')
+    if (not os.path.exists(datasets_directory)):
+        os.mkdir(datasets_directory)
 
+    output_directory = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../datasets/', computation_request_id)
     if (not os.path.exists(output_directory)):
         os.mkdir(output_directory)
 
     if computation_request == '2d_mixed_histogram':
+        assert len(
+        attributes) == 2, "Need 2 attributes for a '2d_mixed_histogram' computation request"
+        assert (attribute_type_map[attributes[0]] == 'Categorical') or (attribute_type_map[attributes[1]]
+                                                                        == 'Categorical'), "Need at least one categorical attribute for '2d-mixed computation request'"
+        assert (attribute_type_map[attributes[0]] != 'Categorical') or (attribute_type_map[attributes[1]] !=
+                                                                        'Categorical'), "Need at least one non-categorical attribute for '2d-mixed computation request'"
+    
         output = mixed_preprocess(
             dataset,
             attributes,
@@ -109,6 +139,10 @@ def preprocess(
         cellsX = len(attributeToValueMap[intToAttribute[0]])
 
     elif computation_request == '1d_categorical_histogram':
+        assert len(
+        attributes) == 1, "Need 1 attribute for a '1d_categorical_histogram' computation request"
+        assert (attribute_type_map[attributes[0]] ==
+            'Categorical'), "Need a categorical attribute for '1d_categorical_histogram'"
         output = categorical_1d(
             dataset,
             attributes,
@@ -134,6 +168,11 @@ def preprocess(
             decimal_accuracy)
 
     elif computation_request == '2d_categorical_histogram':
+        assert len(
+        attributes) == 2, "Need 2 attributes for a '2d_categorical_histogram' computation request"
+        assert (attribute_type_map[attributes[0]] == 'Categorical') and (attribute_type_map[attributes[1]] ==
+                                                                     'Categorical'), "Need two categorical attributes for '2d-categorical_histogram' computation request"
+    
         cellsX = len(attributeToValueMap[intToAttribute[0]])
         cellsY = len(attributeToValueMap[intToAttribute[1]])
         output = categorical_2d(
