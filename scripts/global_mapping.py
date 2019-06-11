@@ -1,82 +1,59 @@
 #!/usr/bin/python3
 
-import pandas as pd
-import json
 import argparse
 
-attributes = [
-    'Ethnicity',
-    'Gender',
-    'Patient Age',
-    'Heart rate',
-    'Height (cm)',
-    'Weight (kg)',
-    'LVEDV (ml)',
-    'LVESV (ml)',
-    'LVSV (ml)',
-    'LVEF (%)',
-    'LV Mass (g)',
-    'RVEDV (ml)',
-    'RVESV (ml)',
-    'RVSV (ml)',
-    'RVEF (%)',
-    'RV Mass (g)',
-    'BMI (kg/msq)',
-    'BMI (kg/m²)',
-    'BSA',
-    'BSA (msq)',
-    'CO (L/min)',
-    'Central PP (mmHg)',
-    'DBP (mmHg)',
-    'LVEF (ratio)',
-    'MAP',
-    'PAP (mmHg)',
-    'PP (mmHg)',
-    'RVEF (ratio)',
-    'SBP (mmHg)',
-    'SVR (mmHg/L/min)'
-]
+from utils import read_json, write_json
 
 
-def map(dataset, output):
-    data = pd.read_csv(dataset)
-    globalMap = {}
-    catAttributes = []
-    for index, value in data.dtypes.items():  # in python3 items is like iteritems of python2
-        if (str(index) in attributes) and (str(value) == 'object'):
-            catAttributes.append(index)
-            globalMap[index] = {}
+def parse_unique_id(mesh_terms):
+    counter = 0
+    global_map = {}
 
-    data = data[catAttributes]
-    for i in catAttributes:
-        count = 0
-        for j in iter(range(data.shape[0])):
-            if not data[i].values[j] in globalMap[i].keys():
-                globalMap[i][data[i].values[j]] = count
-                count += 1
+    for term in mesh_terms:
+        global_map[term['code']] = counter
+        counter += 1
 
-    with open(output, 'w') as f:
-        json.dump(globalMap, f, indent=4)
+    return global_map
+
+
+def parse_tree_numbers(mesh_terms):
+    counter = 0
+    global_map = {}
+
+    for term in mesh_terms:
+        for id in term['ids']:
+            if id not in global_map:
+                global_map[id] = counter
+                counter += 1
+
+    return global_map
+
+
+def map_mesh_terms(args):
+    global_map = {}
+
+    mesh_terms = read_json(args.mesh)
+    if args.unique:
+        global_map = parse_unique_id(mesh_terms)
+    else:
+        global_map = parse_tree_numbers(mesh_terms)
+
+    write_json(args.output, global_map)
 
 
 def main():
     parser = argparse.ArgumentParser(
         description='SMPC global mapping generator')
+    parser.add_argument('mesh', help='File containing mesh terms in XML format as defined in ftp://nlmpubs.nlm.nih.gov/online/mesh')
+    parser.add_argument('output', help='Output file (JSON)')
     parser.add_argument(
-        '-d',
-        '--dataset',
-        required=True,
-        type=str,
-        help='Dataset file (required)')
-    parser.add_argument(
-        '-o',
-        '--output',
-        required=True,
-        type=str,
-        help='Output mapping file (required)')
-    parser.add_argument('--version', action='version', version='%(prog)s 0.1')
+        '-u',
+        '--unique',
+        action='store_true',
+        help='Create a mapping from Mesh Unique ID')
+    parser.add_argument('--version', action='version', version='%(prog)s 0.2')
     args = parser.parse_args()
-    map(args.dataset, args.output)
+    map_mesh_terms(args)
 
 
 if __name__ == '__main__':
