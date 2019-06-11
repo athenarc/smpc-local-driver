@@ -1,11 +1,5 @@
-import numpy as np
-import pandas as pd
 import decimal
 import json
-from hashlib import sha256
-import os
-from itertools import chain
-import gc
 
 
 def sort_attributes(attribute_type_mapping):
@@ -32,25 +26,23 @@ def numerical_float_preprocess(unprocessed_attribute, decimal_accuracy) -> list:
         accuracy_difference = abs_exponent - decimal_accuracy
         assert len(data_instance_as_decimal.as_tuple(
         ).digits[:-abs_exponent]) <= 10, 'Integer values are too large'
-        
+
         if abs_exponent == 0:
             yield int(data_instance_as_decimal)
             yield int("".join(['0'] * (-accuracy_difference)))
-        else:    
+        else:
             if abs(data_instance) >= 1:
                 if accuracy_difference >= 0:
                     yield int("".join(str(i) for i in data_instance_as_decimal.as_tuple().digits[:-abs_exponent]))
-                    yield int("".join(str(i) for i in data_instance_as_decimal.as_tuple().digits[-abs_exponent:-accuracy_difference]))    
-                    
+                    yield int("".join(str(i) for i in data_instance_as_decimal.as_tuple().digits[-abs_exponent:-accuracy_difference]))
+
                 else:
                     yield int("".join(str(i) for i in data_instance_as_decimal.as_tuple().digits[:-abs_exponent]))
                     yield int("".join(str(i) for i in data_instance_as_decimal.as_tuple().digits[-abs_exponent:]))
-            else:   
+            else:
                 yield 0
-                yield int("".join(str(i) for i in data_instance_as_decimal.as_tuple().digits[0:decimal_accuracy]))    
-        
-           
-        
+                yield int("".join(str(i) for i in data_instance_as_decimal.as_tuple().digits[0:decimal_accuracy]))
+
 
 def numerical_int_preprocess(unprocessed_attribute) -> list:
     for data_instance in unprocessed_attribute.values:
@@ -146,3 +138,13 @@ def categorical_2d(dataset, attributes, attribute_type_map, attributeToValueMap)
     for i in iter(range(dataset.shape[0])):
         yield next(processed_data[0])
         yield next(processed_data[1])
+
+
+def read_json(file):
+    with open(file) as f:
+        return json.load(f)
+
+
+def write_json(file, out):
+    with open(file, 'w') as f:
+        json.dump(out, f, indent=4)
