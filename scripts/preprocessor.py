@@ -16,40 +16,54 @@ with open(attributes_file) as attribute_file:
     available_attribute_dicts = json.load(attribute_file)
 available_attributes = [Attribute["name"] for Attribute in available_attribute_dicts]
 
+
+def pandas_from_xml(data_file_name):
+    xml = ET.parse(data_file_name)
+    root = xml.getroot()
+    string = "\{(.*?)\}"
+    prefix = re.search(string,root.tag)[0]
+    data_dict = {}
+    for tname in root.findall('.//' + prefix + 'ClinicalVariables'):
+        attribute = tname.find(prefix + 'TypeName').text
+        if attribute not in data_dict.keys():
+            data_dict[attribute] = []
+        data_dict[attribute].append(convertToType(tname.find(prefix + 'Value').text))
+    data = pd.DataFrame.from_dict(data_dict)
+    del data_dict
+    return data
+
+def pandas_from_csv(data_file_name):
+    data = pd.read_csv(data_file_name)
+    return data
+
+def data_to_pandas(data_file_name):
+    data = None
+    if data_file_name.endswith(".xml"):
+        data=pandas_from_xml(data_file_name)
+    elif data_file_name.endswith(".csv"):
+        data=pandas_from_csv(data_file_name)
+    return data
+
+
 def preprocess(
-        computation_request,
-        computation_request_id,
-        attributes,
-        data_file_name,
-        mapping_file_name,
-        decimal_accuracy=5,
-        filters=None):
+    computation_request,
+    computation_request_id,
+    attributes,
+    data_file_name,
+    mapping_file_name,
+    decimal_accuracy=5,
+    filters=None):
     ''' Function to apply preprocessing to dataset.
-        computation_request: 'str', one of '1d_categorical_histogram', '2d_categorical_histogram', '1d_numerical_histogram', '2d_numerical_histogram', '2d_mixed_histogram', 'secure_aggregation',
-        computation_request_id: 'str', Unique id of computation request,
-        attributes: 'list', contains attributes that will be used for the computation,
-        data_file_name: 'str', path + file_name where data is located,
-        filters: 'dict', maps attributes to filter functions that we want to apply,
-        decimal_accuracy: 'int', how many decimal digits to consider for floats
+    computation_request: 'str', one of '1d_categorical_histogram', '2d_categorical_histogram', '1d_numerical_histogram', '2d_numerical_histogram', '2d_mixed_histogram', 'secure_aggregation',
+    computation_request_id: 'str', Unique id of computation request,
+    attributes: 'list', contains attributes that will be used for the computation,
+    data_file_name: 'str', path + file_name where data is located,
+    filters: 'dict', maps attributes to filter functions that we want to apply,
+    decimal_accuracy: 'int', how many decimal digits to consider for floats
     '''
-    if re.search(".xml$",root.tag)[0]:
-        xml = ET.parse(data_file_name)
-        root = xml.getroot()
-        
-        string = "\{(.*?)\}"
-        prefix = re.search(string,root.tag)[0]
+    
+    data = data_to_pandas(data_file_name)
 
-        columns = {}
-
-        for tname in root.findall('.//' + prefix + 'ClinicalVariables'):
-
-            attribute = tname.find(prefix + 'TypeName').text
-            if attribute not in columns.keys():
-                columns[attribute] = []
-            columns[attribute].append(convertToType(tname.find(prefix + 'Value').text))
-
-    data = pd.DataFrame.from_dict(columns)
-    del columns
     attribute_type_map = {}
     assert set(attributes) <= set(data.dtypes.keys()), 'Some requested attribute is not available'
     for index, value in data.dtypes.iteritems():
