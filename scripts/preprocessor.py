@@ -9,11 +9,12 @@ from hashlib import sha256
 from utils import sort_attributes, mixed_preprocess, categorical_1d, categorical_2d, numerical_1d, numerical_2d
 import xml.etree.ElementTree as ET
 import re 
+from global_mapping import convertToType
 
 attributes_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../smpc-global/', 'attributes.json')
 with open(attributes_file) as attribute_file:
     available_attribute_dicts = json.load(attribute_file)
-available_attributes = [Attribute for Attribute in available_attribute_dicts.keys()]
+available_attributes = [Attribute["name"] for Attribute in available_attribute_dicts]
 
 def preprocess(
         computation_request,
@@ -31,26 +32,21 @@ def preprocess(
         filters: 'dict', maps attributes to filter functions that we want to apply,
         decimal_accuracy: 'int', how many decimal digits to consider for floats
     '''
-    xml = ET.parse(data_file_name)
-    root = xml.getroot()
-    
-    string = "\{(.*?)\}"
-    prefix = re.search(string,root.tag)[0]
+    if re.search(".xml$",root.tag)[0]:
+        xml = ET.parse(data_file_name)
+        root = xml.getroot()
+        
+        string = "\{(.*?)\}"
+        prefix = re.search(string,root.tag)[0]
 
-    columns = {}
+        columns = {}
 
-    for tname in root.findall('.//' + prefix + 'ClinicalVariables'):
+        for tname in root.findall('.//' + prefix + 'ClinicalVariables'):
 
-        attribute = tname.find(prefix + 'TypeName').text
-        if attribute not in columns.keys():
-            columns[attribute] = []
-        try:
-            columns[attribute].append(int(tname.find(prefix + 'Value').text))
-        except Exception:
-            try:
-                columns[attribute].append(float(tname.find(prefix + 'Value').text))
-            except Exception:
-                columns[attribute].append(tname.find(prefix + 'Value').text)
+            attribute = tname.find(prefix + 'TypeName').text
+            if attribute not in columns.keys():
+                columns[attribute] = []
+            columns[attribute].append(convertToType(tname.find(prefix + 'Value').text))
 
     data = pd.DataFrame.from_dict(columns)
     del columns

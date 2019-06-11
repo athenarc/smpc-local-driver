@@ -6,6 +6,14 @@ import re
 
 from utils import read_json, write_json
 
+def convertToType(value):
+    try:
+        return int(value)
+    except Exception:
+        try:
+            return float(value)
+        except Exception:
+            return value
 
 def map_mesh_terms(args):
     global_map = {}
