@@ -39,7 +39,7 @@ def process(args):
 
 def main():
     parser = argparse.ArgumentParser(
-        description='SMPC catalogue processor')
+        description='Covert an xml file containing mesh terms as in NIH to json')
     parser.add_argument('mesh', nargs='?', help='File containing mesh terms in XML format as defined in ftp://nlmpubs.nlm.nih.gov/online/mesh')
     parser.add_argument('output', nargs='?', help='Output file (JSON)')
     parser.add_argument('--version', action='version', version='%(prog)s 0.1')
