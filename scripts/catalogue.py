@@ -57,8 +57,8 @@ def group(args):
 def main():
     parser = argparse.ArgumentParser(
         description='SMPC catalogue processor')
-    parser.add_argument('catalogue', nargs='?', help='Catalogue file')
-    parser.add_argument('output', nargs='?', help='Output file')
+    parser.add_argument('catalogue', help='Catalogue file')
+    parser.add_argument('output', help='Output file')
     parser.add_argument(
         '-i',
         '--inverse',
