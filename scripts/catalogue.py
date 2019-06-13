@@ -16,7 +16,7 @@ def write_file(file, out):
 
 def process(args, callback):
     catalogue = None
-    out = []
+    out = {}
 
     catalogue = read_file(args.catalogue)
 
@@ -27,11 +27,11 @@ def process(args, callback):
 
 
 def normal(args):
-    process(args, lambda entry, out: out.append({entry['id']: entry}))
+    process(args, lambda entry, out: out.update({entry['id']: entry}))
 
 
 def inverse(args):
-    process(args, lambda entry, out: out.append({entry['name']: entry}))
+    process(args, lambda entry, out: out.update({entry['name']: entry}))
 
 
 def group(args):
