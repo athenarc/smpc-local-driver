@@ -6,43 +6,12 @@ import json
 import os
 import argparse
 from hashlib import sha256
-from utils import sort_attributes, mixed_preprocess, categorical_1d, categorical_2d, numerical_1d, numerical_2d, map_values_to_mesh
-import xml.etree.ElementTree as ET
-import re 
-from global_mapping import convertToType
+from utils import *
 
 attributes_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../smpc-global/', 'attributes.json')
 with open(attributes_file) as attribute_file:
     available_attribute_dicts = json.load(attribute_file)
 available_attributes = [Attribute["name"] for Attribute in available_attribute_dicts]
-
-
-def pandas_from_xml(data_file_name):
-  xml = ET.parse(data_file_name)
-  root = xml.getroot()
-  string = "\{(.*?)\}"
-  prefix = re.search(string,root.tag)[0]
-  data_dict = {}
-  for tname in root.findall('.//' + prefix + 'ClinicalVariables'):
-      attribute = tname.find(prefix + 'TypeName').text
-      if attribute not in data_dict.keys():
-          data_dict[attribute] = []
-      data_dict[attribute].append(convertToType(tname.find(prefix + 'Value').text))
-  data = pd.DataFrame.from_dict(data_dict)
-  del data_dict
-  return data
-
-def pandas_from_csv(data_file_name):
-  data = pd.read_csv(data_file_name)
-  return data
-
-def data_to_pandas(data_file_name):
-  data = None
-  if data_file_name.endswith(".xml"):
-      data=pandas_from_xml(data_file_name)
-  elif data_file_name.endswith(".csv"):
-      data=pandas_from_csv(data_file_name)
-  return data
 
 
 def preprocess(
