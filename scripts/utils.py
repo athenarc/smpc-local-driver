@@ -20,7 +20,7 @@ def load_mesh_mapping_file(mesh_mapping_file_path) -> dict:
   with open(mesh_mapping_file_path, 'r') as f:
     return json.load(f)
 
-def map_mesh_to_values(mesh_code, loaded_mesh_mapping) -> list:
+def map_mesh_to_values(mesh_code, loaded_mesh_mapping):
   for term in loaded_mesh_mapping:
     if term['code'] == mesh_code: return term['name']
 

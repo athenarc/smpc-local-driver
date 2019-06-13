@@ -32,7 +32,7 @@ def preprocess(
   decimal_accuracy: 'int', how many decimal digits to consider for floats
   '''
   
-  data = data_to_pandas(data_file_name)
+  data = load_dataset(data_file_name)
   data.columns = [map_values_to_mesh(attribute) for attribute in data.columns]
   print(data.head())
   attribute_type_map = {}
