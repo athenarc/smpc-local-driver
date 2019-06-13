@@ -63,17 +63,17 @@ def main():
         '-i',
         '--inverse',
         action='store_true',
-        help='Create a file where the key of each entry is the name of the term')
+        help='Create a file where the key of each entry is the name of the term.')
     parser.add_argument(
         '-n',
         '--normal',
         action='store_true',
-        help='Create a file where the key of each entry is the id mesh term')
+        help='Create a file where the key of each entry is the id mesh term.')
     parser.add_argument(
         '-g',
         '--group',
         action='store_true',
-        help='Create a file where the mesh terms are grouped')
+        help='Create a file where each mesh term has its childer.')
     parser.add_argument('--version', action='version', version='%(prog)s 0.1')
     args = parser.parse_args()
 
