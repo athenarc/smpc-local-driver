@@ -34,6 +34,10 @@ def inverse(args):
     process(args, lambda entry, out: out.update({entry['name']: entry}))
 
 
+def code(args):
+    process(args, lambda entry, out: out.update({entry['code']: entry}))
+
+
 def group(args):
     catalogue = None
     normalized_catalogue = {}
@@ -70,6 +74,11 @@ def main():
         action='store_true',
         help='Create a file where the key of each entry is the id mesh term.')
     parser.add_argument(
+        '-c',
+        '--code',
+        action='store_true',
+        help='Create a file where the key of each entry is the code mesh term.')
+    parser.add_argument(
         '-g',
         '--group',
         action='store_true',
@@ -77,11 +86,13 @@ def main():
     parser.add_argument('--version', action='version', version='%(prog)s 0.1')
     args = parser.parse_args()
 
-    if (args.inverse or args.group or args.normal) and (not args.catalogue or not args.output):
-        parser.error("<catalogue> <output> required with --inverse, --normal, and --group")
+    if (args.inverse or args.group or args.normal or args.code) and (not args.catalogue or not args.output):
+        parser.error("<catalogue> <output> required with --inverse, --normal, --code, and --group")
 
     if(args.inverse):
         inverse(args)
+    elif(args.code):
+        code(args)
     elif(args.group):
         group(args)
     else:
