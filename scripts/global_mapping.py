@@ -1,82 +1,33 @@
 #!/usr/bin/python3
 
-import pandas as pd
-import json
 import argparse
 
-attributes = [
-    'Ethnicity',
-    'Gender',
-    'Patient Age',
-    'Heart rate',
-    'Height (cm)',
-    'Weight (kg)',
-    'LVEDV (ml)',
-    'LVESV (ml)',
-    'LVSV (ml)',
-    'LVEF (%)',
-    'LV Mass (g)',
-    'RVEDV (ml)',
-    'RVESV (ml)',
-    'RVSV (ml)',
-    'RVEF (%)',
-    'RV Mass (g)',
-    'BMI (kg/msq)',
-    'BMI (kg/m²)',
-    'BSA',
-    'BSA (msq)',
-    'CO (L/min)',
-    'Central PP (mmHg)',
-    'DBP (mmHg)',
-    'LVEF (ratio)',
-    'MAP',
-    'PAP (mmHg)',
-    'PP (mmHg)',
-    'RVEF (ratio)',
-    'SBP (mmHg)',
-    'SVR (mmHg/L/min)'
-]
+from utils import read_json, write_json
 
 
-def map(dataset, output):
-    data = pd.read_csv(dataset)
-    globalMap = {}
-    catAttributes = []
-    for index, value in data.dtypes.items():  # in python3 items is like iteritems of python2
-        if (str(index) in attributes) and (str(value) == 'object'):
-            catAttributes.append(index)
-            globalMap[index] = {}
+def map_mesh_terms(args):
+    global_map = {}
 
-    data = data[catAttributes]
-    for i in catAttributes:
-        count = 0
-        for j in iter(range(data.shape[0])):
-            if not data[i].values[j] in globalMap[i].keys():
-                globalMap[i][data[i].values[j]] = count
-                count += 1
+    mesh_terms = read_json(args.mesh)
 
-    with open(output, 'w') as f:
-        json.dump(globalMap, f, indent=4)
+    for term in mesh_terms:
+        global_map[term['id']] = {}
+        counter = 0
+        for child in term['children']:
+            global_map[term['id']][child['id']] = counter
+            counter += 1
+
+    write_json(args.output, global_map)
 
 
 def main():
     parser = argparse.ArgumentParser(
         description='SMPC global mapping generator')
-    parser.add_argument(
-        '-d',
-        '--dataset',
-        required=True,
-        type=str,
-        help='Dataset file (required)')
-    parser.add_argument(
-        '-o',
-        '--output',
-        required=True,
-        type=str,
-        help='Output mapping file (required)')
-    parser.add_argument('--version', action='version', version='%(prog)s 0.1')
+    parser.add_argument('mesh', help='File containing mesh terms with their childer. See catalogue.py --help.')
+    parser.add_argument('output', help='Output file (JSON)')
+    parser.add_argument('--version', action='version', version='%(prog)s 0.2')
     args = parser.parse_args()
-    map(args.dataset, args.output)
+    map_mesh_terms(args)
 
 
 if __name__ == '__main__':
