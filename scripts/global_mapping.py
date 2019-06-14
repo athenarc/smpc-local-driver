@@ -1,8 +1,6 @@
 #!/usr/bin/python3
 
 import argparse
-import xml.etree.ElementTree as ET
-import re
 
 from utils import read_json, write_json
 
