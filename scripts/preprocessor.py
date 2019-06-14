@@ -8,7 +8,7 @@ import argparse
 from hashlib import sha256
 from utils import *
 
-attributes_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../smpc-global/', 'attributes.json')
+attributes_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../smpc-global-master/', 'attributes.json')
 with open(attributes_file) as attribute_file:
     available_attribute_dicts = json.load(attribute_file)
 available_attributes = [Attribute["name"] for Attribute in available_attribute_dicts]
@@ -21,6 +21,7 @@ def preprocess(
   data_file_name,
   mapping_file_name,
   mesh_mapping_file_path,
+  mesh_codes_and_ids_file,
   decimal_accuracy=5,
   filters=None):
   ''' Function to apply preprocessing to dataset.
@@ -33,20 +34,55 @@ def preprocess(
   '''
   
   data = load_dataset(data_file_name)
-  data.columns = [map_values_to_mesh(attribute) for attribute in data.columns]
-  print(data.head())
+  banned_columns = []
+  for attribute in data.columns:
+    banned_columns.append(map_values_to_mesh(attribute, banned_columns = banned_columns))
+
+  data.columns = banned_columns
   attribute_type_map = {}
   assert set(attributes) <= set(data.dtypes.keys()), 'Some requested attribute is not available'
+
+  with open(mesh_codes_and_ids_file, 'r') as f:
+    mesh_codes_and_ids =  json.load(f)
+  
+  with open(mapping_file_name, 'r') as f:
+    attributeToValueMap = json.load(f)
+  
+  attribute_ids = {}
+  attribute_type_map_codes = {}
+  for attribute in attributes:
+    attribute_ids[attribute] = search_loaded_json_by_field("code", attribute, mesh_codes_and_ids)["ids"]
+
+  for attribute in attribute_ids:
+    if len(attributeToValueMap[attribute_ids[attribute][0]]) > len(attributeToValueMap[attribute_ids[attribute][1]]):
+      attribute_ids[attribute] = attribute_ids[attribute][0]
+    else:
+      attribute_ids[attribute] = attribute_ids[attribute][1]
+
+  inverse_attribute_ids = {v:k for k,v in attribute_ids.items()}
+
   for index, value in data.dtypes.iteritems():
+      if index in attribute_ids:
+        if str(value) == 'object':
+            attribute_type_map[attribute_ids[index]] = 'Categorical'
+        elif 'float' in str(value):
+            attribute_type_map[attribute_ids[index]] = 'Numerical_float'
+        elif 'int' in str(value):
+            attribute_type_map[attribute_ids[index]] = 'Numerical_int'
+        else:
+            raise NotImplementedError
+    
+  for index, value in data.dtypes.iteritems():
+    if index in attributes:
       if str(value) == 'object':
-          attribute_type_map[index] = 'Categorical'
+          attribute_type_map_codes[index] = 'Categorical'
       elif 'float' in str(value):
-          attribute_type_map[index] = 'Numerical_float'
+          attribute_type_map_codes[index] = 'Numerical_float'
       elif 'int' in str(value):
-          attribute_type_map[index] = 'Numerical_int'
+          attribute_type_map_codes[index] = 'Numerical_int'
       else:
           raise NotImplementedError
-
+  
   assert decimal_accuracy > 0, "Decimal accuracy must be positive"
   assert decimal_accuracy <= 10, "Maximal supported decimal accuracy is 10 digits"
   assert (filters is None) or (isinstance(filters, dict)), "Input 'filters' must be a dictionary or None"
@@ -56,8 +92,7 @@ def preprocess(
           filters.keys()) <= set(
           data.columns), "Input 'filters' keys must be data attributes"
 
-  # this sorting mechanism ensures cat -> integer -> float
-  attributes = sorted(attributes, key=sort_attributes(attribute_type_map))
+  attributes = sorted(attributes, key=sort_attributes(attribute_type_map_codes))
 
   if filters is None:
       dataset = data[attributes]
@@ -74,6 +109,9 @@ def preprocess(
       dataset = dataset[attributes]
       dataset = dataset.dropna(axis = 0)
 
+  # this sorting mechanism ensures cat -> integer -> float
+  attributes = sorted(attribute_ids.values(), key=sort_attributes(attribute_type_map))
+
   delete_cols = set(data.columns) - set(attributes)
   data = data.drop(list(delete_cols), axis=1)
   dataset_size = dataset.shape[0]
@@ -82,16 +120,13 @@ def preprocess(
   attributeToInt, intToAttribute = {}, {}
   cellsX, cellsY = None, None
 
-  for i, attribute in enumerate(attributes):
+  for i, attribute in enumerate(attribute_ids.values()):
       attributeToInt[attribute] = i
       intToAttribute[i] = attribute
       if attribute_type_map[attribute] == 'Categorical':
           sizeAlloc += dataset_size
       else:
           sizeAlloc += 2 * dataset_size
-
-  with open(mapping_file_name, 'r') as f:
-      attributeToValueMap = json.load(f)
 
   gc.collect()
 
@@ -110,33 +145,35 @@ def preprocess(
                                                                       == 'Categorical'), "Need at least one categorical attribute for '2d-mixed computation request'"
       assert (attribute_type_map[attributes[0]] != 'Categorical') or (attribute_type_map[attributes[1]] !=
                                                                       'Categorical'), "Need at least one non-categorical attribute for '2d-mixed computation request'"
-  
       output = mixed_preprocess(
           dataset,
-          attributes,
+          list(attribute_ids.keys()),
           attribute_type_map,
           decimal_accuracy,
-          attributeToValueMap)
+          attributeToValueMap,
+          attribute_ids)
       cellsX = len(attributeToValueMap[intToAttribute[0]])
 
   elif computation_request == '1d_categorical_histogram':
-      assert len(
-      attributes) == 1, "Need 1 attribute for a '1d_categorical_histogram' computation request"
-      assert (attribute_type_map[attributes[0]] ==
-          'Categorical'), "Need a categorical attribute for '1d_categorical_histogram'"
-      output = categorical_1d(
-          dataset,
-          attributes,
-          attribute_type_map,
-          attributeToValueMap)
-      cellsX = len(attributeToValueMap[intToAttribute[0]])
+    assert len(
+    attributes) == 1, "Need 1 attribute for a '1d_categorical_histogram' computation request"
+    assert (attribute_type_map[attributes[0]] ==
+      'Categorical'), "Need a categorical attribute for '1d_categorical_histogram'"
+    output = categorical_1d(
+      dataset,
+      list(attribute_ids.keys()),
+      attribute_type_map,
+      attributeToValueMap,
+      attribute_ids)
+    cellsX = len(attributeToValueMap[intToAttribute[0]])
 
   elif computation_request == '1d_numerical_histogram':
       output = numerical_1d(
           dataset,
-          attributes,
+          list(attribute_ids.keys()),
           attribute_type_map,
-          decimal_accuracy)
+          decimal_accuracy,
+          attribute_ids)
 
   elif computation_request == 'secure_aggregation':
       raise NotImplementedError
@@ -144,9 +181,10 @@ def preprocess(
   elif computation_request == '2d_numerical_histogram':
       output = numerical_2d(
           dataset,
-          attributes,
+          list(attribute_ids.keys()),
           attribute_type_map,
-          decimal_accuracy)
+          decimal_accuracy,
+          attribute_ids)
 
   elif computation_request == '2d_categorical_histogram':
     assert len(
@@ -158,9 +196,10 @@ def preprocess(
     cellsY = len(attributeToValueMap[intToAttribute[1]])
     output = categorical_2d(
         dataset,
-        attributes,
+        list(attribute_ids.keys()),
         attribute_type_map,
-        attributeToValueMap)
+        attributeToValueMap,
+        attribute_ids)
 
   with open(output_directory + '/' + computation_request_id + '.txt', 'w') as f:
       for item in output:

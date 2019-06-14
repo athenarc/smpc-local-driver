@@ -24,30 +24,46 @@ def map_mesh_to_values(mesh_code, loaded_mesh_mapping):
   for term in loaded_mesh_mapping:
     if term['code'] == mesh_code: return term['name']
 
-def map_values_to_mesh(value, url = "https://goldorak.hesge.ch:8082/transmesh/translate/"):
+def map_values_to_mesh(value, url = "https://goldorak.hesge.ch:8082/transmesh/translate/", banned_columns=None):
   assert type(value)==str, "Value passed to 'map_values_to_mesh' must be of type <str>"
   data = {
-    'term': value,
-    'terminology': 'text',
-    'result_format': 'json'
-    }
+      'term': value,
+      'terminology': 'text',
+      'result_format': 'json'
+      }
   response = requests.post(url, data=data)
   maximum_ed = None
   mesh_code = None
-  for mesh_candidate in response.json(): 
-    current_ed = lcs(value, mesh_candidate['mesh_label'])
-    if maximum_ed is None or current_ed > maximum_ed:
-      maximum_ed = current_ed 
-      mesh_code = mesh_candidate['mesh_code']
-  if mesh_code is not None:
-    return mesh_code
+  if banned_columns is None:
+    for mesh_candidate in response.json(): 
+      if mesh_candidate['mesh_code'].startswith("D"): current_ed = 1000
+      else: current_ed = lcs(value, mesh_candidate['mesh_label'])
+      if maximum_ed is None or current_ed > maximum_ed:
+        maximum_ed = current_ed 
+        mesh_code = mesh_candidate['mesh_code']
+
+    if mesh_code is not None:
+      return mesh_code
+    else:
+      return value
   else:
-    return value
+    for mesh_candidate in response.json(): 
+      if mesh_candidate['mesh_code'] not in banned_columns:
+        if mesh_candidate['mesh_code'].startswith("D"): current_ed = 1000
+        else: current_ed = lcs(value, mesh_candidate['mesh_label'])
+        if maximum_ed is None or current_ed > maximum_ed:
+          maximum_ed = current_ed 
+          mesh_code = mesh_candidate['mesh_code']
+
+    if mesh_code is not None:
+      return mesh_code
+    else:
+      return value
 
 def categorical_preprocess(unprocessed_attribute, valueToIntMap) -> list:
   count = 0
   for data_instance in unprocessed_attribute.values:
-    if data_instance in valueToIntMap.keys():
+    if data_instance in valueToIntMap:
       yield valueToIntMap[data_instance]
     else:
       valueToIntMap[data_instance] = count
@@ -86,17 +102,17 @@ def numerical_int_preprocess(unprocessed_attribute) -> list:
     yield data_instance_as_string
     yield 0
 
-def mixed_preprocess(dataset, attributes, attribute_type_map, decimal_accuracy, attributeToValueMap) -> list:
+def mixed_preprocess(dataset, attributes, attribute_type_map, decimal_accuracy, attributeToValueMap, attribute_ids) -> list:
     processed_data = []
     for attribute in attributes:
-      if attribute_type_map[attribute] == 'Categorical':
+      if attribute_type_map[attribute_ids[attribute]] == 'Categorical':
         processed_data.append(
             categorical_preprocess(
                 dataset[attribute],
-                attributeToValueMap[attribute]))
-      if attribute_type_map[attribute] == 'Numerical_int':
+                attributeToValueMap[attribute_ids[attribute]]))
+      if attribute_type_map[attribute_ids[attribute]] == 'Numerical_int':
         processed_data.append(numerical_int_preprocess(dataset[attribute]))
-      if attribute_type_map[attribute] == 'Numerical_float':
+      if attribute_type_map[attribute_ids[attribute]] == 'Numerical_float':
         processed_data.append(
           numerical_float_preprocess(
             dataset[attribute],
@@ -106,12 +122,12 @@ def mixed_preprocess(dataset, attributes, attribute_type_map, decimal_accuracy, 
       yield next(processed_data[1])
       yield next(processed_data[1])
 
-def categorical_1d(dataset, attributes, attribute_type_map, attributeToValueMap) -> list:
-    for i in categorical_preprocess(
-        dataset[attributes[0]], attributeToValueMap[attributes[0]]):
-      yield i
+def categorical_1d(dataset, attributes, attribute_type_map, attributeToValueMap, attribute_ids) -> list:
+  for i in categorical_preprocess(
+      dataset[attributes[0]], attributeToValueMap[attribute_ids[attributes[0]]]):
+    yield i
 
-def numerical_1d(dataset, attributes, attribute_type_map, decimal_accuracy) -> list:
+def numerical_1d(dataset, attributes, attribute_type_map, decimal_accuracy, attribute_ids) -> list:
     assert len(
       attributes) == 1, "Need 1 attribute for a '1d_numerical_histogram' computation request"
     assert (attribute_type_map[attributes[0]] !=
@@ -124,7 +140,7 @@ def numerical_1d(dataset, attributes, attribute_type_map, decimal_accuracy) -> l
             dataset[attributes[0]], decimal_accuracy):
           yield i
 
-def numerical_2d(dataset, attributes, attribute_type_map, decimal_accuracy) -> list:
+def numerical_2d(dataset, attributes, attribute_type_map, decimal_accuracy, attribute_ids) -> list:
   assert len(
     attributes) == 2, "Need 2 attributes for a '2d_numerical_histogram' computation request"
   assert (attribute_type_map[attributes[0]] != 'Categorical') and (attribute_type_map[attributes[1]] !=
