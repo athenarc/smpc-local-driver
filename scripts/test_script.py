@@ -16,17 +16,18 @@ def filter2(data) -> bool:
 
 
 computation_request_id = 'test_id_3'
-attributes = ['D007707','D005006']
+attributes = ['M01.686.754']
 mapping_file = '../smpc-global/mapping.json'
-mesh_mapping_file_path = '../smpc-global/catalogue.json'
-mesh_codes_and_ids_file = '../smpc-global/meshTermsByCode.json'
+mesh_codes_to_ids_file = '../smpc-global/meshTermsByCode.json'
+mesh_ids_and_codes_file = '../smpc-global/meshTerms.json'
 
-computation_request = '2d_mixed_histogram'  # '2d_mixed_histogram'
+
+computation_request = '1d_categorical_histogram'  # '2d_mixed_histogram'
 preprocess(
     computation_request,
     computation_request_id,
     attributes,
     '../dataset_sample.xml',
     mapping_file,
-    mesh_mapping_file_path,
-    mesh_codes_and_ids_file)  # , filters = {"Medical Record Number":filter1, "RVEDV (ml)": filter2})
+    mesh_codes_to_ids_file,
+    mesh_ids_and_codes_file)  # , filters = {"Medical Record Number":filter1, "RVEDV (ml)": filter2})
