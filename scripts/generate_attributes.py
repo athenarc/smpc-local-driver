@@ -12,13 +12,13 @@ def generate(dataset, output):
 
     string = '{(.*?)}'
     prefix = re.search(string, root.tag)[0]
-    attrributes = set()
+    attributes = set()
 
     for tname in root.findall('.//' + prefix + 'TypeName'):
-        attrributes.add(tname.text)
+        attributes.add(tname.text)
 
     with open(output, 'w') as f:
-        json.dump(list(attrributes), f, indent=4)
+        json.dump(list(attributes), f, indent=4)
 
 
 def main():
