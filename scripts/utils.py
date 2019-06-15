@@ -6,6 +6,50 @@ import xml.etree.ElementTree as ET
 import re 
 import pandas as pd
 
+def create_attribute_type_map(data, attributes):
+  attribute_type_map = {}
+  if type(attributes) == list:
+    for index, value in data.dtypes.iteritems():
+      if index in attributes:
+        if str(value) == 'object':
+          attribute_type_map[index] = 'Categorical'
+        elif 'float' in str(value):
+          attribute_type_map[index] = 'Numerical_float'
+        elif 'int' in str(value):
+          attribute_type_map[index] = 'Numerical_int'
+        else:
+          raise NotImplementedError
+    return attribute_type_map
+  elif type(attributes)==dict:
+    for index, value in data.dtypes.iteritems():
+      if index in attributes:
+        if str(value) == 'object':
+          attribute_type_map[attributes[index]] = 'Categorical'
+        elif 'float' in str(value):
+          attribute_type_map[attributes[index]] = 'Numerical_float'
+        elif 'int' in str(value):
+          attribute_type_map[attributes[index]] = 'Numerical_int'
+        else:
+          raise NotImplementedError
+    return attribute_type_map
+  else:
+    raise NotImplementedError
+
+def load_all_json_files(mesh_codes_to_ids_file, mesh_ids_to_codes_file, mapping_file_name):
+  with open(mesh_codes_to_ids_file, 'r') as f:
+    mesh_codes_to_ids =  json.load(f)
+  with open(mesh_ids_to_codes_file, 'r') as f:
+    mesh_ids_to_codes =  json.load(f)
+  with open(mapping_file_name, 'r') as f:
+    attributeToValueMap = json.load(f)
+  return mesh_codes_to_ids, mesh_ids_to_codes, attributeToValueMap
+
+def uniquely_map_data_attribute_names_to_codes(data):
+  banned_columns = []
+  for attribute in data.columns:
+    banned_columns.append(map_values_to_mesh(attribute, banned_columns = banned_columns))
+  data.columns = banned_columns
+
 def search_loaded_json_by_field(field, value, loaded_json):
   for i in loaded_json:
     if i[field] == value:
@@ -109,11 +153,11 @@ def map_values_to_mesh(value, url = "https://goldorak.hesge.ch:8082/transmesh/tr
     else:
       return value
 
-def categorical_preprocess(unprocessed_attribute, valueToIntMap, mesh_codes_and_ids) -> list:
+def categorical_preprocess(unprocessed_attribute, valueToIntMap, mesh_codes_to_ids) -> list:
   for data_instance in unprocessed_attribute.values:
     mesh = map_values_to_mesh(data_instance)
-    if mesh in mesh_codes_and_ids.keys():
-      mesh_term = mesh_codes_and_ids[mesh]['id']
+    if mesh in mesh_codes_to_ids.keys():
+      mesh_term = mesh_codes_to_ids[mesh]['id']
       if mesh_term in valueToIntMap:    
         yield valueToIntMap[mesh_term]
       else:
@@ -154,7 +198,7 @@ def numerical_int_preprocess(unprocessed_attribute) -> list:
     yield data_instance_as_string
     yield 0
 
-def mixed_preprocess(dataset, attributes, attribute_type_map, decimal_accuracy, attributeToValueMap, attribute_ids, mesh_codes_and_ids) -> list:
+def mixed_preprocess(dataset, attributes, attribute_type_map, decimal_accuracy, attributeToValueMap, attribute_ids, mesh_codes_to_ids) -> list:
     processed_data = []
     for attribute in attributes:
       if attribute_type_map[attribute_ids[attribute]] == 'Categorical':
@@ -162,7 +206,7 @@ def mixed_preprocess(dataset, attributes, attribute_type_map, decimal_accuracy, 
             categorical_preprocess(
                 dataset[attribute],
                 attributeToValueMap[attribute_ids[attribute]],
-                mesh_codes_and_ids))
+                mesh_codes_to_ids))
       if attribute_type_map[attribute_ids[attribute]] == 'Numerical_int':
         processed_data.append(numerical_int_preprocess(dataset[attribute]))
       if attribute_type_map[attribute_ids[attribute]] == 'Numerical_float':
@@ -175,9 +219,9 @@ def mixed_preprocess(dataset, attributes, attribute_type_map, decimal_accuracy, 
       yield next(processed_data[1])
       yield next(processed_data[1])
 
-def categorical_1d(dataset, attributes, attribute_type_map, attributeToValueMap, attribute_ids, mesh_codes_and_ids) -> list:
+def categorical_1d(dataset, attributes, attribute_type_map, attributeToValueMap, attribute_ids, mesh_codes_to_ids) -> list:
   for i in categorical_preprocess(
-      dataset[attributes[0]], attributeToValueMap[attribute_ids[attributes[0]]],mesh_codes_and_ids):
+      dataset[attributes[0]], attributeToValueMap[attribute_ids[attributes[0]]],mesh_codes_to_ids):
     yield i
 
 def numerical_1d(dataset, attributes, attribute_type_map, decimal_accuracy, attribute_ids) -> list:
@@ -215,14 +259,14 @@ def numerical_2d(dataset, attributes, attribute_type_map, decimal_accuracy, attr
     yield next(processed_data[1])
 
 
-def categorical_2d(dataset, attributes, attribute_type_map, attributeToValueMap, attribute_ids, mesh_codes_and_ids) -> list:
+def categorical_2d(dataset, attributes, attribute_type_map, attributeToValueMap, attribute_ids, mesh_codes_to_ids) -> list:
     processed_data = []
     for attribute in attributes:
         processed_data.append(
             categorical_preprocess(
                 dataset[attribute],
                 attributeToValueMap[attribute], 
-                mesh_codes_and_ids))
+                mesh_codes_to_ids))
     for i in iter(range(dataset.shape[0])):
         yield next(processed_data[0])
         yield next(processed_data[1])

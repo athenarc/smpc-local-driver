@@ -20,8 +20,8 @@ def preprocess(
   attributes,
   data_file_name,
   mapping_file_name,
-  mesh_mapping_file_path,
-  mesh_codes_and_ids_file,
+  mesh_codes_to_ids_file,
+  mesh_ids_to_codes_file,
   decimal_accuracy=5,
   filters=None):
   ''' Function to apply preprocessing to dataset.
@@ -33,48 +33,23 @@ def preprocess(
   decimal_accuracy: 'int', how many decimal digits to consider for floats
   '''
   data = load_dataset(data_file_name).head(5)
-  banned_columns = []
-  for attribute in data.columns:
-    banned_columns.append(map_values_to_mesh(attribute, banned_columns = banned_columns))
-
-  data.columns = banned_columns
+  uniquely_map_data_attribute_names_to_codes(data)
   print(data.head(5))
-  attribute_type_map = {}
+  mesh_codes_to_ids, mesh_ids_to_codes_file, attributeToValueMap = \
+   load_all_json_files(mesh_codes_to_ids_file, mesh_ids_to_codes_file, mapping_file_name)
+
+  attributes = [mesh_ids_to_codes_file[attribute]['code'] for attribute in attributes]
   assert set(attributes) <= set(data.dtypes.keys()), 'Some requested attribute is not available'
 
-  with open(mesh_codes_and_ids_file, 'r') as f:
-    mesh_codes_and_ids =  json.load(f)
-
-  with open(mapping_file_name, 'r') as f:
-    attributeToValueMap = json.load(f)
-  
-  for index, value in data.dtypes.iteritems():
-    if index in attributes:
-      if str(value) == 'object':
-        attribute_type_map[index] = 'Categorical'
-      elif 'float' in str(value):
-        attribute_type_map[index] = 'Numerical_float'
-      elif 'int' in str(value):
-        attribute_type_map[index] = 'Numerical_int'
-      else:
-        raise NotImplementedError
+  attribute_type_map = create_attribute_type_map(data, attributes)
 
   attributes = sorted(attributes, key=sort_attributes(attribute_type_map))
   attribute_type_map.clear()
   attribute_ids = {}
   for attribute in attributes:
-    attribute_ids[attribute] = mesh_codes_and_ids[attribute]["id"]
+    attribute_ids[attribute] = mesh_codes_to_ids[attribute]["id"]
 
-  for index, value in data.dtypes.iteritems():
-    if index in attribute_ids:
-      if str(value) == 'object':
-        attribute_type_map[attribute_ids[index]] = 'Categorical'
-      elif 'float' in str(value):
-        attribute_type_map[attribute_ids[index]] = 'Numerical_float'
-      elif 'int' in str(value):
-        attribute_type_map[attribute_ids[index]] = 'Numerical_int'
-      else:
-        raise NotImplementedError
+  attribute_type_map = create_attribute_type_map(data, attribute_ids)
   
   assert decimal_accuracy > 0, "Decimal accuracy must be positive"
   assert decimal_accuracy <= 10, "Maximal supported decimal accuracy is 10 digits"
@@ -143,7 +118,7 @@ def preprocess(
           decimal_accuracy,
           attributeToValueMap,
           attribute_ids,
-          mesh_codes_and_ids)
+          mesh_codes_to_ids)
       cellsX = len(attributeToValueMap[intToAttribute[0]])
 
   elif computation_request == '1d_categorical_histogram':
@@ -157,7 +132,7 @@ def preprocess(
       attribute_type_map,
       attributeToValueMap,
       attribute_ids,
-      mesh_codes_and_ids)
+      mesh_codes_to_ids)
     cellsX = len(attributeToValueMap[intToAttribute[0]])
 
   elif computation_request == '1d_numerical_histogram':
@@ -193,7 +168,7 @@ def preprocess(
         attribute_type_map,
         attributeToValueMap,
         attribute_ids,
-        mesh_codes_and_ids)
+        mesh_codes_to_ids)
 
   with open(output_directory + '/' + computation_request_id + '.txt', 'w') as f:
       for item in output:
