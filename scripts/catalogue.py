@@ -119,7 +119,7 @@ def main():
         '--download',
         nargs=1,
         dest='url',
-        help='Create a file where each attribute and value of the dataset is mapped to a mesh term')
+        help='Create a file where each attribute and value of the dataset is mapped to a mesh term by quering the catalogue')
     parser.add_argument('--version', action='version', version='%(prog)s 0.1')
     args = parser.parse_args()
 
