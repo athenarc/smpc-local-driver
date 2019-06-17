@@ -9,6 +9,7 @@ verify_ssl = true
 numpy = "*"
 pandas = "*"
 requests = "*"
+tqdm = "*"
 
 [requires]
 python_version = "3.7"

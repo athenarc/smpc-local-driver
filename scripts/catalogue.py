@@ -1,9 +1,9 @@
 #!/usr/bin/python3
 
-import json
 import argparse
 import requests
 import re
+from tqdm import tqdm
 import xml.etree.ElementTree as ET
 
 from utils import read_json, write_json
@@ -50,7 +50,7 @@ def download(args):
         attributes.add(attribute)
         values.add(value)
 
-    for attr in attributes:
+    for attr in tqdm(attributes):
         data = {
             'term': attr,
             'terminology': 'text',
@@ -60,11 +60,14 @@ def download(args):
         response = requests.post(args.url[0].strip('\t\n\r'), data=data)
         terms = response.json()
 
+        tmp = {'attribute': attr, 'terms': []}
         for t in terms:
             if t['mesh_code'] in mesh_codes:
-                mesh_terms.append(mesh_codes[t['mesh_code']])
+                tmp['terms'].append(mesh_codes[t['mesh_code']])
             else:
-                mesh_terms.append(t)
+                tmp['terms'].append(t)
+
+        mesh_terms.append(tmp)
 
     write_json(args.output, mesh_terms)
 
