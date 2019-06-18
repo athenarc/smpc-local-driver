@@ -92,11 +92,25 @@ def group(args):
     write_json(args.output, out)
 
 
+def keywords(args):
+    mesh_terms = read_json('../smpc-global/meshTermsInversed.json')
+    headers = {'accept': 'application/json'}
+    response = requests.get(args.keywords[0].strip('\t\n\r'), headers=headers)
+    keywords = response.json()
+    out = []
+
+    for k in keywords['data']:
+        if k['label'] in mesh_terms:
+            out.append(mesh_terms[k['label']])
+
+    write_json(args.keywords[1], out)
+
+
 def main():
     parser = argparse.ArgumentParser(
         description='SMPC catalogue processor')
-    parser.add_argument('catalogue', help='Catalogue file')
-    parser.add_argument('output', help='Output file')
+    parser.add_argument('catalogue', nargs='?', help='Catalogue file')
+    parser.add_argument('output', nargs='?', help='Output file')
     parser.add_argument(
         '-i',
         '--inverse',
@@ -122,7 +136,12 @@ def main():
         '--download',
         nargs=1,
         dest='url',
-        help='Create a file where each attribute and value of the dataset is mapped to a mesh term by quering the catalogue')
+        help='Create a file where each attribute and value of the dataset is mapped to a mesh term by quering the catalogue.')
+    parser.add_argument(
+        '-k',
+        '--keywords',
+        nargs=2,
+        help='Create a file where each keyword from the given url is mapped to a mesh term.')
     parser.add_argument('--version', action='version', version='%(prog)s 0.1')
     args = parser.parse_args()
 
@@ -137,6 +156,8 @@ def main():
         group(args)
     elif(args.url):
         download(args)
+    elif(args.keywords):
+        keywords(args)
     else:
         normal(args)
 
