@@ -46,8 +46,8 @@ def preprocess(
         mesh_terms = read_json('../smpc-global/meshTerms.json')
         mapping = read_json('../smpc-global/mapping.json')
 
-        assert set(attributes) <= set(data.dtypes.keys()), 'Some requested attribute is not available'
         attributes = [mesh_terms[attribute]['code'] for attribute in attributes]
+        assert set(attributes) <= set(data.columns), 'Some requested attribute is not available'
 
         attribute_type_map = create_attribute_type_map(data, attributes)
 
@@ -143,7 +143,7 @@ def preprocess(
 
     elif computation_request in ['1d_categorical_histogram', '2d_categorical_histogram']:
         inverse = read_json('../smpc-global/meshTermsInversed.json')
-        read_patients = read_json("./_patient.json")
+        read_patients = read_json(os.path.join(os.path.dirname(os.path.realpath(__file__)), '_patient.json'))
         mapping = read_json('../smpc-global/mapping.json')
         mapping_values = [mapping[attribute] for attribute in attributes]
 
