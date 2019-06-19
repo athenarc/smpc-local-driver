@@ -60,6 +60,7 @@ def uniquely_map_data_attribute_names_to_codes(data):
     banned_columns = []
     for attribute in data.columns:
         banned_columns.append(map_values_to_mesh(attribute, banned_columns=banned_columns))
+
     data.columns = banned_columns
 
 
@@ -172,10 +173,10 @@ def map_values_to_mesh(value, url="https://goldorak.hesge.ch:8082/transmesh/tran
                     maximum_ed = current_ed
                     mesh_code = mesh_candidate['mesh_code']
 
-            if mesh_code is not None:
-                return mesh_code
-            else:
-                return value
+        if mesh_code is not None:
+            return mesh_code
+        else:
+            return value
 
 
 def categorical_preprocess(unprocessed_attribute, valueToIntMap, mesh_codes_to_ids) -> list:
