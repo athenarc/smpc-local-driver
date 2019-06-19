@@ -64,9 +64,7 @@ def preprocess(
         assert (filters is None) or (isinstance(filters, dict)), "Input 'filters' must be a dictionary or None"
 
         if isinstance(filters, dict):
-            assert set(
-                filters.keys()) <= set(
-                data.columns), "Input 'filters' keys must be data attributes"
+            assert set(filters.keys()) <= set(data.columns), "Input 'filters' keys must be data attributes"
 
         if filters is None:
             dataset = data[attributes]
@@ -147,9 +145,9 @@ def preprocess(
         inverse = read_json('../smpc-global/meshTermsInversed.json')
         read_patients = read_json("./_patient.json")
         mapping = read_json('../smpc-global/mapping.json')
-        ValueMaps = [mapping[attribute] for attribute in attributes]
+        mapping_values = [mapping[attribute] for attribute in attributes]
 
-        output = [categorical_handle(read_patients, inverse, vmap) for vmap in ValueMaps]
+        output = [categorical_handle(read_patients, inverse, value) for value in mapping_values]
 
         sizeAlloc = 0
         with open(datasets_directory + '/' + computation_request_id + '.txt', 'w') as f:
@@ -173,14 +171,14 @@ def preprocess(
 
         cellsY = 0
         try:
-            cellsY = len(ValueMaps[1])
+            cellsY = len(mapping_values[1])
         except Exception:
             pass
 
         json_output = {
             'precision': '{0:.{1}f}'.format(10**(-decimal_accuracy), decimal_accuracy),
             'sizeAlloc': sizeAlloc,
-            'cellsX': len(ValueMaps[0]),
+            'cellsX': len(mapping_values[0]),
             'cellsY': cellsY,
             'dataSize': sizeAlloc,
             'hash256': SHA256.hexdigest(),

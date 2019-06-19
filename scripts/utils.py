@@ -114,8 +114,8 @@ def load_dataset(data_file_name):
 
 
 def sort_attributes(attribute_type_mapping):
-    def sorting(type_):
-        return len(attribute_type_mapping[type_])
+    def sorting(_type):
+        return len(attribute_type_mapping[_type])
     return sorting
 
 
