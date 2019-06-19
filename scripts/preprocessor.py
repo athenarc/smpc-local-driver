@@ -39,13 +39,9 @@ def preprocess(
     decimal_accuracy: 'int', how many decimal digits to consider for floats
     '''
 
-    datasets_directory = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../datasets/')
+    datasets_directory = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../datasets/', computation_request_id)
     if (not os.path.exists(datasets_directory)):
-        os.mkdir(datasets_directory)
-
-    output_directory = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../datasets/', computation_request_id)
-    if (not os.path.exists(output_directory)):
-        os.mkdir(output_directory)
+        os.makedirs(datasets_directory, exist_ok=True)
 
     if computation_request in ['1d_numerical_histogram', '2d_numerical_histogram']:
         data = load_dataset(data_file_name).head(5)
