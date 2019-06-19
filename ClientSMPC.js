@@ -8,7 +8,7 @@ const { includeError } = require('./helpers')
 const SCALE = process.env.SMPC_ENGINE
 const SCRIPTS = path.resolve(__dirname, 'scripts')
 const GLOBAL_FOLDER = path.resolve(__dirname, 'smpc-global')
-const CLIENT_CMD = `${SCALE}/Client-Api.x`
+const CLIENT_CMD = process.env.NODE_ENV === 'development' ? 'fake_scale.sh' : `${SCALE}/Client-Api.x`
 const PREPROCESS_CMD = `python3 ${SCRIPTS}/preprocessor.py`
 const DATASET_FOLDER = path.resolve(__dirname, 'datasets')
 const DATASET = process.env.DATASET || '../data/cvi_identified.csv'
@@ -58,7 +58,7 @@ class Client extends EventEmitter {
     }
 
     const attr = this.job.attributes.map(a => `"${a.name}"`)
-    const args = [`-c ${this.job.id}`, `-d ${path.resolve(__dirname, DATASET)}`, `-m ${GLOBAL_FOLDER}/mapping.json`, `-a ${attr.join(' ')}`, `-g ${this.job.algorithm}`]
+    const args = [`-c ${this.job.id}`, `-d ${path.resolve(__dirname, DATASET)}`, `-a ${attr.join(' ')}`, `-g ${this.job.algorithm}`]
     this.preprocessCMD = spawn(PREPROCESS_CMD, args, { cwd: SCALE, shell: true, detached: true })
 
     this.preprocessCMD.stderr.on('data', (data) => { console.log(data.toString()) })
@@ -79,7 +79,8 @@ class Client extends EventEmitter {
   }
 
   run () {
-    this.client = spawn(CLIENT_CMD, [this.id, `${DATASET_FOLDER}/${this.job.id}/${this.job.id}.txt`], { cwd: SCALE, shell: true, detached: true })
+    const cwd = process.env.NODE_ENV === 'development' ? __dirname : SCALE
+    this.client = spawn(CLIENT_CMD, [this.id, `${DATASET_FOLDER}/${this.job.id}/${this.job.id}.txt`], { cwd, shell: true, detached: true })
 
     this.client.stdout.on('data', (data) => {
       console.log(data.toString())
