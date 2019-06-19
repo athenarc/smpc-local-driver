@@ -7,7 +7,6 @@ import argparse
 from hashlib import sha256
 from utils import (
     read_json,
-    load_all_json_files,
     uniquely_map_data_attribute_names_to_codes,
     load_dataset,
     create_attribute_type_map,
@@ -43,12 +42,11 @@ def preprocess(
         data = load_dataset(data_file_name).head(5)
         uniquely_map_data_attribute_names_to_codes(data)
         print(data.head(5))
-        mesh_codes_to_ids, mesh_ids_to_codes_file, attributeToValueMap = load_all_json_files(mesh_codes_to_ids_file, mesh_ids_to_codes_file, mapping_file_name)
         mesh_codes_to_ids = read_json('../smpc-global/meshTermsByCode.json')
-        mesh_ids_to_codes_file = read_json('../smpc-global/meshTerms.json')
-        attributeToValueMap = read_json('../smpc-global/mapping.json')
+        mesh_ids_to_codes = read_json('../smpc-global/meshTerms.json')
+        mapping = read_json('../smpc-global/mapping.json')
 
-        attributes = [mesh_ids_to_codes_file[attribute]['code'] for attribute in attributes]
+        attributes = [mesh_ids_to_codes[attribute]['code'] for attribute in attributes]
         assert set(attributes) <= set(data.dtypes.keys()), 'Some requested attribute is not available'
 
         attribute_type_map = create_attribute_type_map(data, attributes)
@@ -146,11 +144,10 @@ def preprocess(
             json.dump(json_output, f, indent=4)
 
     elif computation_request in ['1d_categorical_histogram', '2d_categorical_histogram']:
-        # TODO:here call api
-        inverse = read_json(mesh_terms_inverted_file)
+        inverse = read_json('../smpc-global/meshTermsInversed.json')
         read_patients = read_json("./_patient.json")
-        attributeToValueMap = read_json(mapping_file_name)
-        ValueMaps = [attributeToValueMap[attribute] for attribute in attributes]
+        mapping = read_json('../smpc-global/mapping.json')
+        ValueMaps = [mapping[attribute] for attribute in attributes]
 
         output = [categorical_handle(read_patients, inverse, vmap) for vmap in ValueMaps]
 
