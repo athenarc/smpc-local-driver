@@ -1,3 +1,4 @@
+import sys
 from preprocessor import preprocess
 
 computations = {
@@ -13,6 +14,6 @@ for c in computations:
         c,
         computations[c]['id'],
         computations[c]['attributes'],
-        '/Users/laxmana/Downloads/dataset_sample.xml'
+        sys.argv[1]
     )
     print('[*] Done!')
