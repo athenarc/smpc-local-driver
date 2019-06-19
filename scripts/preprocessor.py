@@ -120,11 +120,11 @@ def preprocess(
                 decimal_accuracy,
                 attribute_ids)
 
-        with open(output_directory + '/' + computation_request_id + '.txt', 'w') as f:
+        with open(datasets_directory + '/' + computation_request_id + '.txt', 'w') as f:
             for item in output:
                 f.write("%s\n" % item)
 
-        with open(output_directory + '/' + computation_request_id + '.txt', "rb") as f:
+        with open(datasets_directory + '/' + computation_request_id + '.txt', "rb") as f:
             SHA256 = sha256()
             for byte_block in iter(lambda: f.read(4096), b""):
                 SHA256.update(byte_block)
@@ -140,7 +140,7 @@ def preprocess(
             'intToAttribute': intToAttribute
         }
 
-        with open(output_directory + '/' + computation_request_id + '.json', 'w') as f:
+        with open(datasets_directory + '/' + computation_request_id + '.json', 'w') as f:
             json.dump(json_output, f, indent=4)
 
     elif computation_request in ['1d_categorical_histogram', '2d_categorical_histogram']:
@@ -152,7 +152,7 @@ def preprocess(
         output = [categorical_handle(read_patients, inverse, vmap) for vmap in ValueMaps]
 
         sizeAlloc = 0
-        with open(output_directory + '/' + computation_request_id + '.txt', 'w') as f:
+        with open(datasets_directory + '/' + computation_request_id + '.txt', 'w') as f:
             if len(output) == 1:
                 for item in output[0]:
                     sizeAlloc += 1
@@ -166,7 +166,7 @@ def preprocess(
                     except StopIteration:
                         break
 
-        with open(output_directory + '/' + computation_request_id + '.txt', "rb") as f:
+        with open(datasets_directory + '/' + computation_request_id + '.txt', "rb") as f:
             SHA256 = sha256()
             for byte_block in iter(lambda: f.read(4096), b""):
                 SHA256.update(byte_block)
@@ -188,7 +188,7 @@ def preprocess(
             'intToAttribute': []
         }
 
-        with open(output_directory + '/' + computation_request_id + '.json', 'w') as f:
+        with open(datasets_directory + '/' + computation_request_id + '.json', 'w') as f:
             json.dump(json_output, f, indent=4)
 
 
