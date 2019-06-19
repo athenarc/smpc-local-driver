@@ -6,6 +6,21 @@ import xml.etree.ElementTree as ET
 import re 
 import pandas as pd
 
+def categorical_handle(read_patients, inverse, vmap):
+  for record in read_patients:
+    data = record['keywords']
+    for value in data:
+      if value['value'] in inverse:
+        if (inverse[value['value']]['id'] in vmap): yield vmap[inverse[value['value']]['id']]
+        else: yield -1
+
+def get_children(parent_id, dictionary):
+  result = []
+  for k in dictionary:
+    if dictionary[k]['parentCategoryId'] == parent_id:
+      result.append(k)
+  return result    
+
 def create_attribute_type_map(data, attributes):
   attribute_type_map = {}
   if type(attributes) == list:
