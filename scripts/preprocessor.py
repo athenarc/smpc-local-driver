@@ -42,12 +42,12 @@ def preprocess(
         data = load_dataset(data_file_name)
         data.columns = get_codes_from_attributes(data.columns)
 
-        mesh_codes_to_ids = read_json('../smpc-global/meshTermsByCode.json')
-        mesh_ids_to_codes = read_json('../smpc-global/meshTerms.json')
+        mesh_codes = read_json('../smpc-global/meshTermsByCode.json')
+        mesh_terms = read_json('../smpc-global/meshTerms.json')
         mapping = read_json('../smpc-global/mapping.json')
 
-        attributes = [mesh_ids_to_codes[attribute]['code'] for attribute in attributes]
         assert set(attributes) <= set(data.dtypes.keys()), 'Some requested attribute is not available'
+        attributes = [mesh_terms[attribute]['code'] for attribute in attributes]
 
         attribute_type_map = create_attribute_type_map(data, attributes)
 
@@ -55,7 +55,7 @@ def preprocess(
         attribute_type_map.clear()
         attribute_ids = {}
         for attribute in attributes:
-            attribute_ids[attribute] = mesh_codes_to_ids[attribute]["id"]
+            attribute_ids[attribute] = mesh_codes[attribute]["id"]
 
         attribute_type_map = create_attribute_type_map(data, attribute_ids)
 
