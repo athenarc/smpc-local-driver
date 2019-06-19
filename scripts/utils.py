@@ -40,7 +40,7 @@ def create_attribute_type_map(data, attributes):
                 else:
                     raise NotImplementedError
         return attribute_type_map
-    elif type(attributes)==dict:
+    elif type(attributes) == dict:
         for index, value in data.dtypes.iteritems():
             if index in attributes:
                 if str(value) == 'object':

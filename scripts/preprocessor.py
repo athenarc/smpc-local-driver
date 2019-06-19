@@ -27,10 +27,6 @@ def preprocess(
     computation_request_id,
     attributes,
     data_file_name,
-    mapping_file_name,
-    mesh_codes_to_ids_file,
-    mesh_ids_to_codes_file,
-    mesh_terms_inverted_file,
     decimal_accuracy=5,
     filters=None
 ):
@@ -56,6 +52,9 @@ def preprocess(
         uniquely_map_data_attribute_names_to_codes(data)
         print(data.head(5))
         mesh_codes_to_ids, mesh_ids_to_codes_file, attributeToValueMap = load_all_json_files(mesh_codes_to_ids_file, mesh_ids_to_codes_file, mapping_file_name)
+        mesh_codes_to_ids = read_json('../smpc-global/meshTermsByCode.json')
+        mesh_ids_to_codes_file = read_json('../smpc-global/meshTerms.json')
+        attributeToValueMap = read_json('../smpc-global/mapping.json')
 
         attributes = [mesh_ids_to_codes_file[attribute]['code'] for attribute in attributes]
         assert set(attributes) <= set(data.dtypes.keys()), 'Some requested attribute is not available'
@@ -220,12 +219,6 @@ def main():
         type=str,
         help='Dataset file (required)')
     parser.add_argument(
-        '-m',
-        '--mapping',
-        required=True,
-        type=str,
-        help='Mapping file (required)')
-    parser.add_argument(
         '-a',
         '--attributes',
         nargs='*',
@@ -251,7 +244,7 @@ def main():
         help='The number of decimal digits to be consider for floats (default: %(default)s)')
     parser.add_argument('--version', action='version', version='%(prog)s 0.1')
     args = parser.parse_args()
-    preprocess(args.algorithm, args.computation, args.attributes, args.dataset, args.mapping, args.precision)  # , filters = {"Medical Record Number":filter1, "RVEDV (ml)": filter2})
+    preprocess(args.algorithm, args.computation, args.attributes, args.dataset, args.precision)  # , filters = {"Medical Record Number":filter1, "RVEDV (ml)": filter2})
 
 
 if __name__ == '__main__':
