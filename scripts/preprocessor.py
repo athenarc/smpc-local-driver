@@ -7,7 +7,7 @@ import argparse
 from hashlib import sha256
 from utils import (
     read_json,
-    uniquely_map_data_attribute_names_to_codes,
+    get_codes_from_attributes,
     load_dataset,
     create_attribute_type_map,
     sort_attributes,
@@ -39,9 +39,9 @@ def preprocess(
         os.makedirs(datasets_directory, exist_ok=True)
 
     if computation_request in ['1d_numerical_histogram', '2d_numerical_histogram']:
-        data = load_dataset(data_file_name).head(5)
-        uniquely_map_data_attribute_names_to_codes(data)
-        print(data.head(5))
+        data = load_dataset(data_file_name)
+        data.columns = get_codes_from_attributes(data.columns)
+
         mesh_codes_to_ids = read_json('../smpc-global/meshTermsByCode.json')
         mesh_ids_to_codes = read_json('../smpc-global/meshTerms.json')
         mapping = read_json('../smpc-global/mapping.json')

@@ -56,12 +56,12 @@ def create_attribute_type_map(data, attributes):
         raise NotImplementedError
 
 
-def uniquely_map_data_attribute_names_to_codes(data):
-    banned_columns = []
-    for attribute in data.columns:
-        banned_columns.append(map_values_to_mesh(attribute, banned_columns=banned_columns))
+def get_codes_from_attributes(attributes):
+    codes = []
+    for attribute in attributes:
+        codes.append(map_values_to_mesh(attribute, banned_columns=codes))
 
-    data.columns = banned_columns
+    return codes
 
 
 def search_loaded_json_by_field(field, value, loaded_json):
@@ -140,16 +140,19 @@ def map_mesh_to_values(mesh_code, loaded_mesh_mapping):
 
 def map_values_to_mesh(value, url="https://goldorak.hesge.ch:8082/transmesh/translate/", banned_columns=None):
     assert type(value) == str, "Value passed to 'map_values_to_mesh' must be of type <str>"
+
     data = {
         'term': value,
         'terminology': 'text',
         'result_format': 'json'
     }
+
     response = requests.post(url, data=data)
     maximum_ed = None
     mesh_code = None
-    if banned_columns is None:
-        for mesh_candidate in response.json():
+
+    for mesh_candidate in response.json():
+        if mesh_candidate['mesh_code'] not in banned_columns or banned_columns is None:
             if mesh_candidate['mesh_code'].startswith("D"):
                 current_ed = 1000
             else:
@@ -158,25 +161,10 @@ def map_values_to_mesh(value, url="https://goldorak.hesge.ch:8082/transmesh/tran
                 maximum_ed = current_ed
                 mesh_code = mesh_candidate['mesh_code']
 
-        if mesh_code is not None:
-            return mesh_code
-        else:
-            return value
+    if mesh_code is not None:
+        return mesh_code
     else:
-        for mesh_candidate in response.json():
-            if mesh_candidate['mesh_code'] not in banned_columns:
-                if mesh_candidate['mesh_code'].startswith("D"):
-                    current_ed = 1000
-                else:
-                    current_ed = lcs(value, mesh_candidate['mesh_label'])
-                if maximum_ed is None or current_ed > maximum_ed:
-                    maximum_ed = current_ed
-                    mesh_code = mesh_candidate['mesh_code']
-
-        if mesh_code is not None:
-            return mesh_code
-        else:
-            return value
+        return value
 
 
 def categorical_preprocess(unprocessed_attribute, valueToIntMap, mesh_codes_to_ids) -> list:
