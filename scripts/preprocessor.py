@@ -17,10 +17,6 @@ from utils import (
     numerical_2d
 )
 
-attributes_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../smpc-global/', 'attributes.json')
-available_attribute_dicts = read_json(attributes_file)
-available_attributes = [Attribute["name"] for Attribute in available_attribute_dicts]
-
 
 def preprocess(
     computation_request,
