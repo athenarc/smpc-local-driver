@@ -34,17 +34,19 @@ def preprocess(
     decimal_accuracy: 'int', how many decimal digits to consider for floats
     '''
 
-    datasets_directory = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../datasets/', computation_request_id)
-    if (not os.path.exists(datasets_directory)):
-        os.makedirs(datasets_directory, exist_ok=True)
+    DATASET_DIRECTORY = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../datasets/', computation_request_id)
+    SMPC_GLOBAL_DIRECTORY = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../smpc-global/')
+
+    if (not os.path.exists(DATASET_DIRECTORY)):
+        os.makedirs(DATASET_DIRECTORY, exist_ok=True)
 
     if computation_request in ['1d_numerical_histogram', '2d_numerical_histogram']:
         data = load_dataset(data_file_name)
         data.columns = get_codes_from_attributes(data.columns)
 
-        mesh_codes = read_json('../smpc-global/meshTermsByCode.json')
-        mesh_terms = read_json('../smpc-global/meshTerms.json')
-        mapping = read_json('../smpc-global/mapping.json')
+        mesh_codes = read_json(os.path.join(SMPC_GLOBAL_DIRECTORY, 'meshTermsByCode.json'))
+        mesh_terms = read_json(os.path.join(SMPC_GLOBAL_DIRECTORY, 'meshTerms.json'))
+        mapping = read_json(os.path.join(SMPC_GLOBAL_DIRECTORY, 'mapping.json'))
 
         attributes = [mesh_terms[attribute]['code'] for attribute in attributes]
         assert set(attributes) <= set(data.columns), 'Some requested attribute is not available'
@@ -118,11 +120,11 @@ def preprocess(
                 decimal_accuracy,
                 attribute_ids)
 
-        with open(datasets_directory + '/' + computation_request_id + '.txt', 'w') as f:
+        with open(DATASET_DIRECTORY + '/' + computation_request_id + '.txt', 'w') as f:
             for item in output:
                 f.write("%s\n" % item)
 
-        with open(datasets_directory + '/' + computation_request_id + '.txt', "rb") as f:
+        with open(DATASET_DIRECTORY + '/' + computation_request_id + '.txt', "rb") as f:
             SHA256 = sha256()
             for byte_block in iter(lambda: f.read(4096), b""):
                 SHA256.update(byte_block)
@@ -138,19 +140,19 @@ def preprocess(
             'intToAttribute': intToAttribute
         }
 
-        with open(datasets_directory + '/' + computation_request_id + '.json', 'w') as f:
+        with open(DATASET_DIRECTORY + '/' + computation_request_id + '.json', 'w') as f:
             json.dump(json_output, f, indent=4)
 
     elif computation_request in ['1d_categorical_histogram', '2d_categorical_histogram']:
-        inverse = read_json('../smpc-global/meshTermsInversed.json')
+        inverse = read_json(os.path.join(SMPC_GLOBAL_DIRECTORY, 'meshTermsInversed.json'))
         read_patients = read_json(os.path.join(os.path.dirname(os.path.realpath(__file__)), '_patient.json'))
-        mapping = read_json('../smpc-global/mapping.json')
+        mapping = read_json(os.path.join(SMPC_GLOBAL_DIRECTORY, 'mapping.json'))
         mapping_values = [mapping[attribute] for attribute in attributes]
 
         output = [categorical_handle(read_patients, inverse, value) for value in mapping_values]
 
         sizeAlloc = 0
-        with open(datasets_directory + '/' + computation_request_id + '.txt', 'w') as f:
+        with open(DATASET_DIRECTORY + '/' + computation_request_id + '.txt', 'w') as f:
             if len(output) == 1:
                 for item in output[0]:
                     sizeAlloc += 1
@@ -164,7 +166,7 @@ def preprocess(
                     except StopIteration:
                         break
 
-        with open(datasets_directory + '/' + computation_request_id + '.txt', "rb") as f:
+        with open(DATASET_DIRECTORY + '/' + computation_request_id + '.txt', "rb") as f:
             SHA256 = sha256()
             for byte_block in iter(lambda: f.read(4096), b""):
                 SHA256.update(byte_block)
@@ -186,7 +188,7 @@ def preprocess(
             'intToAttribute': []
         }
 
-        with open(datasets_directory + '/' + computation_request_id + '.json', 'w') as f:
+        with open(DATASET_DIRECTORY + '/' + computation_request_id + '.json', 'w') as f:
             json.dump(json_output, f, indent=4)
 
 
