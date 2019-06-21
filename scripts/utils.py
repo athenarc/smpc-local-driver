@@ -22,8 +22,7 @@ def categorical_handle(read_patients, inverse, vmap):
                 if (inverse[value['value']]['id'] in vmap):
                     yield vmap[inverse[value['value']]['id']]
             else:
-                yield len(vmap)
-
+                yield -1
 
 def get_children(parent_id, dictionary):
     result = []

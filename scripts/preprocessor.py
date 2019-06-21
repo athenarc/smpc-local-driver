@@ -155,14 +155,18 @@ def preprocess(
         with open(DATASET_DIRECTORY + '/' + computation_request_id + '.txt', 'w') as f:
             if len(output) == 1:
                 for item in output[0]:
-                    sizeAlloc += 1
-                    f.write("%s\n" % item)
+                    if item != -1:
+                        sizeAlloc += 1
+                        f.write("%s\n" % item)
             else:
                 while 1:
                     try:
-                        f.write("%s\n" % next(output[0]))
-                        f.write("%s\n" % next(output[1]))
-                        sizeAlloc += 2
+                        from_attribute_0 = next(output[0])
+                        from_attribute_1 = next(output[1])
+                        if (from_attribute_0!=-1) and (from_attribute_1 != -1):
+                            f.write("%s\n" % from_attribute_0)
+                            f.write("%s\n" % from_attribute_1)
+                            sizeAlloc += 2
                     except StopIteration:
                         break
 
