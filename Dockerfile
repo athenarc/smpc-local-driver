@@ -23,7 +23,7 @@ RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
 RUN echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list
 RUN apt-get update && apt-get install yarn -y
 
-RUN git clone https://github.com/Athena-MHMD/SCALE-MAMBA.git
+RUN git clone https://github.com/athenarc/SCALE-MAMBA.git
 
 WORKDIR /SCALE-MAMBA
 RUN ./install_dependencies.sh /local
@@ -55,7 +55,7 @@ WORKDIR /smpc-local-drive
 RUN ./install.sh
 
 RUN mkdir -p certs
-RUN mkdir -p datasets 
+RUN mkdir -p datasets
 
 WORKDIR /smpc-local-drive/scripts
 RUN pip3 install -r requirements.txt
