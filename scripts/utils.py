@@ -19,8 +19,9 @@ def categorical_handle(read_patients, inverse, vmap):
         data = record['keywords']
         for value in data:
             if value['value'] in inverse:
-                if (inverse[value['value']]['id'] in vmap):
-                    yield vmap[inverse[value['value']]['id']]
+                for k in vmap:
+                    if (k in inverse[value['value']]['id']):
+                        yield vmap[k]
             else:
                 yield -1
 
