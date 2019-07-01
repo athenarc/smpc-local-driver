@@ -5,6 +5,13 @@ import requests
 import xml.etree.ElementTree as ET
 import re
 import pandas as pd
+import os
+from dotenv import load_dotenv
+
+
+ENV_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../.env')
+load_dotenv(dotenv_path=ENV_PATH)
+CATALOGUE_API = os.getenv('CATALOGUE_API')
 
 
 class Attribute:
@@ -42,6 +49,7 @@ def categorical_handle(value_generator, inverse, vmap):
                 yield -1
         except StopIteration:
             break
+
 
 def get_children(parent_id, dictionary):
     result = []
@@ -163,7 +171,7 @@ def map_mesh_to_values(mesh_code, loaded_mesh_mapping):
             return term['name']
 
 
-def map_values_to_mesh(value, url="https://goldorak.hesge.ch:8082/transmesh/translate/", banned_columns=None):
+def map_values_to_mesh(value, banned_columns=None):
     assert type(value) == str, "Value passed to 'map_values_to_mesh' must be of type <str>"
 
     data = {
@@ -172,7 +180,7 @@ def map_values_to_mesh(value, url="https://goldorak.hesge.ch:8082/transmesh/tran
         'result_format': 'json'
     }
 
-    response = requests.post(url, data=data)
+    response = requests.post(CATALOGUE_API, data=data)
     maximum_ed = None
     mesh_code = None
 
