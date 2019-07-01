@@ -7,6 +7,7 @@ import re
 import pandas as pd
 import os
 from dotenv import load_dotenv
+from tqdm import tqdm
 
 
 ENV_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../.env')
@@ -15,28 +16,31 @@ CATALOGUE_API = os.getenv('CATALOGUE_API')
 CATALOGUE_EXPLORER_API = CATALOGUE_API + "catalogue_explorer/"
 CATALOGUE_MESH_API = CATALOGUE_API + "transmesh/"
 
+
 class Attribute:
     def __init__(self, id, name, code):
         self.id = id
         self.name = name
         self.code = code
 
+
 def handle_categorical(keyword):
     data = {
-            'keywords': keyword,
-            'consents': 'academic research'
-        }
+        'keywords': keyword
+    }
+
     result = requests.post(url=CATALOGUE_EXPLORER_API + "search/", data=data)
     dicto = result.json()['data']
-    for entry in dicto:
+    for entry in tqdm(dicto):
         parse = entry['records']
-        for value in parse:
+        for value in tqdm(parse):
             catalogue_id = value['catalogue_id']
             kw = requests.get(url=CATALOGUE_EXPLORER_API + "getRecord/?catalogue_id=" + catalogue_id, headers={'accept': 'application/json'})
             json_obj = kw.json()['data']['keywords']
             for i in json_obj:
                 to_yield = i['value']
                 yield to_yield
+
 
 def categorical_handle(value_generator, inverse, vmap):
     while 1:
