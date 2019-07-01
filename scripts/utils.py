@@ -20,17 +20,35 @@ class Attribute:
         self.name = name
         self.code = code
 
+def handle_categorical(keyword):
+    data = {
+            'keywords': keyword,
+            'consents': 'academic research'
+        }
+    result = requests.post(url="https://goldorak.hesge.ch:8082/catalogue_explorer/search/", data=data)
+    dicto = result.json()['data']
+    for entry in dicto:
+        parse = entry['records']
+        for value in parse:
+            catalogue_id = value['catalogue_id']
+            kw = requests.get(url = "https://goldorak.hesge.ch:8082/catalogue_explorer/getRecord/?catalogue_id=" + catalogue_id, headers={'accept': 'application/json'})
+            json_obj = kw.json()['data']['keywords']
+            for i in json_obj:
+                to_yield = i['value']
+                yield to_yield
 
-def categorical_handle(read_patients, inverse, vmap):
-    for record in read_patients:
-        data = record['keywords']
-        for value in data:
-            if value['value'] in inverse:
+def categorical_handle(value_generator, inverse, vmap):
+    while 1:
+        try:
+            value = next(value_generator)
+            if value in inverse:
                 for k in vmap:
-                    if (k in inverse[value['value']]['id']):
+                    if (k in inverse[value]['id']):
                         yield vmap[k]
             else:
                 yield -1
+        except StopIteration:
+            break
 
 
 def get_children(parent_id, dictionary):

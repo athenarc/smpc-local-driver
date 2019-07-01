@@ -13,7 +13,8 @@ from utils import (
     sort_attributes,
     categorical_handle,
     numerical_1d,
-    numerical_2d
+    numerical_2d,
+    handle_categorical
 )
 
 
@@ -145,30 +146,25 @@ def preprocess(
 
     elif computation_request in ['1d_categorical_histogram', '2d_categorical_histogram']:
         inverse = read_json(os.path.join(SMPC_GLOBAL_DIRECTORY, 'meshTermsInversed.json'))
-        read_patients = read_json(os.path.join(os.path.dirname(os.path.realpath(__file__)), '_patient.json'))
+        keywords = read_json(os.path.join(SMPC_GLOBAL_DIRECTORY, 'keywords.json'))
+        requested_keyword = None
+        for i in keywords:
+            if attributes[0] == i['id']:
+                requested_keyword = i['name']
+        assert requested_keyword is not None, 'Bad keyword requested'
+        # read_patients = read_json(os.path.join(os.path.dirname(os.path.realpath(__file__)), '_patient.json'))
         mapping = read_json(os.path.join(SMPC_GLOBAL_DIRECTORY, 'mapping.json'))
         mapping_values = [mapping[attribute] for attribute in attributes]
-
-        output = [categorical_handle(read_patients, inverse, value) for value in mapping_values]
+        generate_values = handle_categorical(requested_keyword)
+        output = categorical_handle(generate_values, inverse, mapping_values[0]) 
 
         sizeAlloc = 0
         with open(DATASET_DIRECTORY + '/' + computation_request_id + '.txt', 'w') as f:
-            if len(output) == 1:
-                for item in output[0]:
-                    if item != -1:
-                        sizeAlloc += 1
-                        f.write("%s\n" % item)
-            else:
-                while 1:
-                    try:
-                        from_attribute_0 = next(output[0])
-                        from_attribute_1 = next(output[1])
-                        if (from_attribute_0!=-1) and (from_attribute_1 != -1):
-                            f.write("%s\n" % from_attribute_0)
-                            f.write("%s\n" % from_attribute_1)
-                            sizeAlloc += 2
-                    except StopIteration:
-                        break
+            for item in output:
+                if item != -1:
+                    sizeAlloc += 1
+                    f.write("%s\n" % item)
+           
 
         with open(DATASET_DIRECTORY + '/' + computation_request_id + '.txt', "rb") as f:
             SHA256 = sha256()
