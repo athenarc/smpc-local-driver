@@ -1,6 +1,6 @@
 import sys
 from preprocessor import preprocess
-
+import utils
 computations = {
     '1d_categorical_histogram': {'id': 'test_id_1', 'attributes': ['C14.280']}
     # '2d_categorical_histogram': {'id': 'test_id_2', 'attributes': ['C14.280', 'C13.703']},
