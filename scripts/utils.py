@@ -12,6 +12,8 @@ from dotenv import load_dotenv
 ENV_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../.env')
 load_dotenv(dotenv_path=ENV_PATH)
 CATALOGUE_API = os.getenv('CATALOGUE_API')
+CATALOGUE_EXPLORER_API = CATALOGUE_API + "catalogue_explorer/"
+CATALOGUE_MESH_API = CATALOGUE_API + "transmesh/"
 
 class Attribute:
     def __init__(self, id, name, code):
@@ -24,13 +26,13 @@ def handle_categorical(keyword):
             'keywords': keyword,
             'consents': 'academic research'
         }
-    result = requests.post(url=CATALOGUE_API + "search/", data=data)
+    result = requests.post(url=CATALOGUE_EXPLORER_API + "search/", data=data)
     dicto = result.json()['data']
     for entry in dicto:
         parse = entry['records']
         for value in parse:
             catalogue_id = value['catalogue_id']
-            kw = requests.get(url = CATALOGUE_API + "getRecord/?catalogue_id=" + catalogue_id, headers={'accept': 'application/json'})
+            kw = requests.get(url=CATALOGUE_EXPLORER_API + "getRecord/?catalogue_id=" + catalogue_id, headers={'accept': 'application/json'})
             json_obj = kw.json()['data']['keywords']
             for i in json_obj:
                 to_yield = i['value']
@@ -179,7 +181,7 @@ def map_values_to_mesh(value, banned_columns=None):
         'result_format': 'json'
     }
 
-    response = requests.post(CATALOGUE_API, data=data)
+    response = requests.post(CATALOGUE_MESH_API + "translate/", data=data)
     maximum_ed = None
     mesh_code = None
 
