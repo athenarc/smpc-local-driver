@@ -10,6 +10,7 @@ numpy = "*"
 pandas = "*"
 requests = "*"
 python-dotenv = "*"
+tqdm = "*"
 
 [requires]
 python_version = "3.7"
