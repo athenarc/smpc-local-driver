@@ -13,7 +13,6 @@ ENV_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../.env')
 load_dotenv(dotenv_path=ENV_PATH)
 CATALOGUE_API = os.getenv('CATALOGUE_API')
 
-
 class Attribute:
     def __init__(self, id, name, code):
         self.id = id
@@ -25,13 +24,13 @@ def handle_categorical(keyword):
             'keywords': keyword,
             'consents': 'academic research'
         }
-    result = requests.post(url="https://goldorak.hesge.ch:8082/catalogue_explorer/search/", data=data)
+    result = requests.post(url=CATALOGUE_API + "search/", data=data)
     dicto = result.json()['data']
     for entry in dicto:
         parse = entry['records']
         for value in parse:
             catalogue_id = value['catalogue_id']
-            kw = requests.get(url = "https://goldorak.hesge.ch:8082/catalogue_explorer/getRecord/?catalogue_id=" + catalogue_id, headers={'accept': 'application/json'})
+            kw = requests.get(url = CATALOGUE_API + "getRecord/?catalogue_id=" + catalogue_id, headers={'accept': 'application/json'})
             json_obj = kw.json()['data']['keywords']
             for i in json_obj:
                 to_yield = i['value']
