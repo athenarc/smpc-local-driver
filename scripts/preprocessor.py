@@ -147,23 +147,45 @@ def preprocess(
     elif computation_request in ['1d_categorical_histogram', '2d_categorical_histogram']:
         inverse = read_json(os.path.join(SMPC_GLOBAL_DIRECTORY, 'meshTermsInversed.json'))
         keywords = read_json(os.path.join(SMPC_GLOBAL_DIRECTORY, 'keywords.json'))
-        requested_keyword = None
-        for i in keywords:
-            if attributes[0] == i['id']:
-                requested_keyword = i['name']
-        assert requested_keyword is not None, 'Bad keyword requested'
-        # read_patients = read_json(os.path.join(os.path.dirname(os.path.realpath(__file__)), '_patient.json'))
         mapping = read_json(os.path.join(SMPC_GLOBAL_DIRECTORY, 'mapping.json'))
-        mapping_values = [mapping[attribute] for attribute in attributes]
-        generate_values = handle_categorical(requested_keyword)
-        output = categorical_handle(generate_values, inverse, mapping_values[0]) 
+        requested_keyword = []
+        for i in keywords:
+            if i['id'] in attributes:
+                requested_keyword.append(i['name'])
+        if computation_request == '1d_categorical_histogram':
+            assert len(requested_keyword)==1, 'Bad keywords requested'
+            mapping_values = [mapping[attribute] for attribute in attributes]
+            generate_values = handle_categorical(requested_keyword[0])
+            output = categorical_handle(generate_values, inverse, mapping_values[0]) 
 
-        sizeAlloc = 0
-        with open(DATASET_DIRECTORY + '/' + computation_request_id + '.txt', 'w') as f:
-            for item in output:
-                if item != -1:
-                    sizeAlloc += 1
-                    f.write("%s\n" % item)
+            sizeAlloc = 0
+            with open(DATASET_DIRECTORY + '/' + computation_request_id + '.txt', 'w') as f:
+                for item in output:
+                    if item != -1:
+                        sizeAlloc += 1
+                        f.write("%s\n" % item)
+
+        if computation_request == '2d_categorical_histogram':
+            assert len(requested_keyword)==2, 'Bad keywords requested'
+            mapping_values = [mapping[attribute] for attribute in attributes]
+            generate_values = [handle_categorical(rw) for rw in requested_keyword]
+            output = [categorical_handle(generate_values[ind], inverse, mapping_value) for ind, mapping_value in enumerate(mapping_values)]
+
+            sizeAlloc = 0
+            with open(DATASET_DIRECTORY + '/' + computation_request_id + '.txt', 'w') as f:
+                while 1:
+                    try:
+                        from_attribute_0 = next(output[0])
+                        from_attribute_1 = next(output[1])
+                        if (from_attribute_0!=-1) and (from_attribute_1 != -1):
+                            f.write("%s\n" % from_attribute_0)
+                            f.write("%s\n" % from_attribute_1)
+                            sizeAlloc += 2
+                    except StopIteration:
+                        break
+        # read_patients = read_json(os.path.join(os.path.dirname(os.path.realpath(__file__)), '_patient.json'))
+        
+        
            
 
         with open(DATASET_DIRECTORY + '/' + computation_request_id + '.txt', "rb") as f:
