@@ -45,6 +45,9 @@ class Strategy(metaclass=abc.ABCMeta):
 
 
 class OneDimensionCategoricalHistogram(Strategy):
+    def validate(self):
+        assert self._rattributes is not None, 'Empty attributes'
+        assert len(self._rattributes) == 1, 'Wrong number of attributes'
 
     def out(self):
         pass
