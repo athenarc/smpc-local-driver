@@ -8,6 +8,7 @@ import pandas as pd
 import os
 from dotenv import load_dotenv
 from tqdm import tqdm
+from hashlib import sha256
 
 
 ENV_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../.env')
@@ -336,3 +337,13 @@ def read_json(file):
 def write_json(file, out):
     with open(file, 'w') as f:
         json.dump(out, f, indent=4)
+
+
+def hash_file(file):
+    h = sha256()
+
+    with open(file, "rb") as f:
+        for byte_block in iter(lambda: f.read(4096), b""):
+            h.update(byte_block)
+
+    return h.hexdigest()
