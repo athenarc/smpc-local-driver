@@ -1,8 +1,11 @@
 import abc
 import os
+import decimal
 from settings import DATASET_DIRECTORY, SMPC_GLOBAL_DIRECTORY, MESH_TERMS, MESH_INVERSED, MAPPING
-from catalogue_api import get_catalogue_records
-from utils import write_json, read_json, hash_file
+from catalogue_api import get_catalogue_records, normalize_attributes
+from utils import write_json, read_json, hash_file, load_dataset
+
+MAX_PRECISION = 10
 
 
 class Processor:
@@ -224,10 +227,19 @@ class TwoDimensionCategoricalHistogram(CategoricalHistogram):
         self.out(results, mapping)
 
 
-class OneDimensionNumericalHistogram(Strategy):
+class OneDimensionNumericalHistogram(NumericalHistogram):
     def process(self):
-        pass
+        self.validate(1)
+        self.process_attributes()
+        dataset = self.get_dataset()
+        dataset.columns = normalize_attributes(dataset.columns)
+        # dataset.columns = ['C0806432', 'C1552854', 'BMI', 'C1301584', 'C0001779', 'D005006', 'D001835', 'D019484', 'Firstname', 'C2598112', 'C0439204', 'C0043100', 'MRN', 'C1552595', 'D007707', 'C1514254', 'C0489786']
+        self.add_data_types(dataset)
+        self.validate_normalized_attributes(dataset)
 
+        delete_cols = set(dataset.columns) - set(self.get_attributes_by_key('code'))
+        dataset = dataset.drop(list(delete_cols), axis=1)
+        results = self.process_column(self._attributes[0], dataset)
 
 class TwoDimensionNumericalHistogram(Strategy):
     def process(self):
