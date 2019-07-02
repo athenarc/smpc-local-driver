@@ -60,9 +60,18 @@ class Strategy(metaclass=abc.ABCMeta):
             'hash256': hash_file(self._file_path)
         }
 
-    @abc.abstractmethod
-    def validate(self):
-        pass
+    def add_data_types(self, data):
+        for attribute in self._attributes:
+            for index, value in data.dtypes.iteritems():
+                if attribute.code == index:
+                    if str(value) == 'object':
+                        attribute.type = 'Categorical'
+                    elif 'float' in str(value):
+                        attribute.type = 'Numerical_float'
+                    elif 'int' in str(value):
+                        attribute.type = 'Numerical_int'
+                    else:
+                        raise NotImplementedError
 
     @abc.abstractmethod
     def process(self):
