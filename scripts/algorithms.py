@@ -124,7 +124,57 @@ class NumericalHistogram(Strategy):
             assert attr.type != 'Categorical', 'Categorical attribute provided'
 
     def get_dataset(self):
-        pass
+        return load_dataset(self._dataset)
+
+    def process_column(self, attribute, dataset):
+        if attribute.type == 'Numerical_int':
+            return self.procress_integer(dataset[attribute.code])
+        elif attribute.type == 'Numerical_float':
+            return self.procress_float(dataset[attribute.code])
+
+    def procress_integer(self, dataset):
+        return [str(v) for v in dataset if len(str(v)) <= MAX_PRECISION]
+
+    def procress_float(self, dataset):
+        results = []
+        for value in dataset:
+            decimal_value = decimal.Decimal(value)
+            exponent = abs(decimal_value .as_tuple().exponent)
+
+            assert len(decimal_value.as_tuple().digits[:-exponent]) <= MAX_PRECISION, 'Integer values are too large'
+
+            accuracy_difference = exponent - self._precision
+
+            if exponent == 0:
+                results.append(int(decimal_value))
+                results.append(int("".join(['0'] * (-accuracy_difference))))
+            else:
+                if abs(value) >= 1:
+                    if accuracy_difference >= 0:
+                        results.append(int("".join(str(i) for i in decimal_value.as_tuple().digits[:-exponent])))
+                        results.append(int("".join(str(i) for i in decimal_value.as_tuple().digits[-exponent:-accuracy_difference])))
+                    else:
+                        results.append(int("".join(str(i) for i in decimal_value.as_tuple().digits[:-exponent])))
+                        results.append(int("".join(str(i) for i in decimal_value.as_tuple().digits[-exponent:])))
+                else:
+                    results.append(0)
+                    results.append(int("".join(str(i) for i in decimal_value.as_tuple().digits[0:self._precision])))
+
+        return results
+
+    def out(self, out):
+        self.make_directory()
+        self.write_output(out)
+
+        description = self.get_base_description()
+        description['sizeAlloc'] = len(out)
+        description['dataSize'] = int(len(out) / 2)
+        description['cellsX'] = None
+        description['cellsY'] = None
+        description['attributeToInt'] = []
+        description['intToAttribute'] = []
+
+        write_json(self._desc_path, description)
 
 
 class OneDimensionCategoricalHistogram(CategoricalHistogram):
