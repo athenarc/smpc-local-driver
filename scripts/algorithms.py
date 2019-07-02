@@ -111,6 +111,18 @@ class CategoricalHistogram(Strategy):
 
 
 class NumericalHistogram(Strategy):
+    def validate(self, num):
+        assert self._rattributes is not None, 'Empty attributes'
+        assert len(self._rattributes) == num, 'Wrong number of attributes'
+        assert self._precision > 0, "Decimal accuracy must be positive"
+        assert self._precision <= MAX_PRECISION, "Maximal supported decimal accuracy is {0} digits".format(MAX_PRECISION)
+
+    def validate_normalized_attributes(self, dataset):
+        assert set(self.get_attributes_by_key('code')) <= set(dataset.columns), 'Some requested attribute is not available'
+
+        for attr in self._attributes:
+            assert attr.type != 'Categorical', 'Categorical attribute provided'
+
     def get_dataset(self):
         pass
 
