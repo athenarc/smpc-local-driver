@@ -1,6 +1,7 @@
 import requests
 from tqdm import tqdm
-from settings import CATALOGUE_EXPLORER_API
+from settings import CATALOGUE_EXPLORER_API, CATALOGUE_MESH_API
+from utils import lcs
 
 
 def get_catalogue_records(keywords):
@@ -21,3 +22,41 @@ def get_catalogue_records(keywords):
             results.append(detailed_record)
 
     return results
+
+
+def map_attributes_to_mesh(value, banned_columns=None):
+    assert type(value) == str, "Value passed to 'map_attributes_to_mesh' must be of type <str>"
+
+    data = {
+        'term': value,
+        'terminology': 'text',
+        'result_format': 'json'
+    }
+
+    URL = '{0}/{1}'.format(CATALOGUE_MESH_API, 'translate/')
+    response = requests.post(URL, data=data)
+    maximum_ed = None
+    mesh_code = None
+
+    for mesh_candidate in response.json():
+        if mesh_candidate['mesh_code'] not in banned_columns or banned_columns is None:
+            if mesh_candidate['mesh_code'].startswith("D"):
+                current_ed = 1000
+            else:
+                current_ed = lcs(value, mesh_candidate['mesh_label'])
+            if maximum_ed is None or current_ed > maximum_ed:
+                maximum_ed = current_ed
+                mesh_code = mesh_candidate['mesh_code']
+
+    if mesh_code is not None:
+        return mesh_code
+    else:
+        return value
+
+
+def normalize_attributes(attributes):
+    codes = []
+    for attribute in tqdm(attributes):
+        codes.append(map_attributes_to_mesh(attribute, banned_columns=codes))
+
+    return codes
