@@ -233,7 +233,6 @@ class OneDimensionNumericalHistogram(NumericalHistogram):
         self.process_attributes()
         dataset = self.get_dataset()
         dataset.columns = normalize_attributes(dataset.columns)
-        # dataset.columns = ['C0806432', 'C1552854', 'BMI', 'C1301584', 'C0001779', 'D005006', 'D001835', 'D019484', 'Firstname', 'C2598112', 'C0439204', 'C0043100', 'MRN', 'C1552595', 'D007707', 'C1514254', 'C0489786']
         self.add_data_types(dataset)
         self.validate_normalized_attributes(dataset)
 
@@ -241,6 +240,36 @@ class OneDimensionNumericalHistogram(NumericalHistogram):
         dataset = dataset.drop(list(delete_cols), axis=1)
         results = self.process_column(self._attributes[0], dataset)
 
-class TwoDimensionNumericalHistogram(Strategy):
+        del dataset
+        self.out(results)
+
+
+class TwoDimensionNumericalHistogram(NumericalHistogram):
     def process(self):
-        pass
+        self.validate(2)
+        self.process_attributes()
+        dataset = self.get_dataset()
+        dataset.columns = normalize_attributes(dataset.columns)
+        self.add_data_types(dataset)
+        self.validate_normalized_attributes(dataset)
+
+        delete_cols = set(dataset.columns) - set(self.get_attributes_by_key('code'))
+        dataset = dataset.drop(list(delete_cols), axis=1)
+        results = []
+        dataset_size = dataset.shape[0]
+
+        for attribute in self._attributes:
+            results.append(self.process_column(attribute, dataset))
+
+        del dataset
+
+        out = []
+        for index in range(dataset_size):
+            start = index * 2
+            end = start + 2
+
+            out.extend(results[0][start:end])
+            out.extend(results[1][start:end])
+
+        del results
+        self.out(out)
