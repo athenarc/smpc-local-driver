@@ -18,7 +18,6 @@ def get_catalogue_records(keywords):
             catalogue_id = rec['catalogue_id']
             RECORD_URL = '{0}getRecord/?catalogue_id={1}'.format(CATALOGUE_EXPLORER_API, catalogue_id)
             detailed_record = requests.get(url=RECORD_URL, headers={'accept': 'application/json'}).json()
-            print(detailed_record)
             results.append(detailed_record)
 
     return results

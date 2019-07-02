@@ -69,55 +69,88 @@ class Strategy(metaclass=abc.ABCMeta):
         pass
 
     @abc.abstractmethod
-    def out(self, file, out):
+    def out(self, out, mapping):
         pass
 
 
-class OneDimensionCategoricalHistogram(Strategy):
-    def validate(self):
+class CategoricalHistogram(Strategy):
+    def validate(self, num):
         assert self._rattributes is not None, 'Empty attributes'
-        assert len(self._rattributes) == 1, 'Wrong number of attributes'
+        assert len(self._rattributes) == num, 'Wrong number of attributes'
 
-    def process(self):
-        self.validate()
-        self.process_attributes()
+    def get_dataset(self):
         attributes_by_name = self.get_attributes_by_key('name')
         records = get_catalogue_records(';'.join(attributes_by_name))
-        # records = read_json('patient.json')
-        results = []
-        mapping = self.get_mapping()[0]
         keywords = list(map(lambda rec: rec['data']['keywords'], records))
-        keywords = [k['value'] for sublist in keywords for k in sublist]
-
-        for k in keywords:
-            if k in MESH_INVERSED:
-                for m in mapping:
-                    if (m in MESH_INVERSED[k]['id']):
-                        results.append(mapping[m])
-            else:
-                results.append(-1)
-
-        results = list(filter(lambda v: v > -1, results))
-        self.out(results, mapping)
+        return keywords
 
     def out(self, out, mapping):
         self.make_directory()
         self.write_output(out)
 
         description = self.get_base_description()
-        description['sizeAlloc'] = len(out) - 1
-        description['dataSize'] = len(out) - 1
-        description['cellsX'] = len(mapping)
-        description['cellsY'] = 0
+        description['sizeAlloc'] = len(out)
+        description['dataSize'] = len(out)
+        description['cellsX'] = len(mapping[0])
         description['attributeToInt'] = []
         description['intToAttribute'] = []
+
+        if len(mapping) == 2:
+            description['cellsY'] = len(mapping[1])
 
         write_json(self._desc_path, description)
 
 
-class TwoDimensionCategoricalHistogram(Strategy):
-    def process(self):
+class NumericalHistogram(Strategy):
+    def get_dataset(self):
         pass
+
+
+class OneDimensionCategoricalHistogram(CategoricalHistogram):
+    def process(self):
+        self.validate(1)
+        self.process_attributes()
+        mapping = self.get_mapping()
+        results = []
+        keywords = self.get_dataset()
+
+        # Flatten keywords and filter those that are not mesh terms
+        keywords = [k['value'] for sublist in keywords for k in sublist if k['value'] in MESH_INVERSED]
+
+        for k in keywords:
+            for m in mapping[0]:
+                if (m in MESH_INVERSED[k]['id']):
+                    results.append(mapping[0][m])
+
+        self.out(results, mapping)
+
+
+class TwoDimensionCategoricalHistogram(CategoricalHistogram):
+    def process(self):
+        self.validate(2)
+        self.process_attributes()
+        mapping = self.get_mapping()
+        results = []
+        records = self.get_dataset()
+
+        for rec in records:
+            first = []
+            second = []
+            for k in rec:
+                if k['value'] in MESH_INVERSED:
+                    for m in mapping[0]:
+                        if (m in MESH_INVERSED[k['value']]['id']):
+                            first.append(mapping[0][m])
+                    for m in mapping[1]:
+                        if (m in MESH_INVERSED[k['value']]['id']):
+                            second.append(mapping[1][m])
+
+            # Get only the first mapping. Ignore multiple values per attribute.
+            if len(first) > 0 and len(second) > 0:
+                results.append(first[0])
+                results.append(second[0])
+
+        self.out(results, mapping)
 
 
 class OneDimensionNumericalHistogram(Strategy):
