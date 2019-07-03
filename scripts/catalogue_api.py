@@ -8,16 +8,20 @@ def get_catalogue_records(data):
     results = []
     SEARCH_URL = '{0}/search/'.format(CATALOGUE_EXPLORER_API)
 
-    SEARCH_URL = '{0}search/'.format(CATALOGUE_EXPLORER_API)
+    res = requests.post(url=SEARCH_URL, data=data, headers={'accept': 'application/json', 'Content-Type': 'application/x-www-form-urlencoded'})
 
-    res = requests.post(url=SEARCH_URL, data=data).json()
+    if res.status_code != 200:
+        return results
+
+    res = res.json()
 
     for entry in tqdm(res['data'][:1]):
         for rec in tqdm(entry['records']):
             catalogue_id = rec['catalogue_id']
-            detailed_record = requests.get(url=RECORD_URL, headers={'accept': 'application/json'}).json()
-            results.append(detailed_record)
             RECORD_URL = '{0}/getRecord/?catalogue_id={1}'.format(CATALOGUE_EXPLORER_API, catalogue_id)
+            detailed_record = requests.get(url=RECORD_URL, headers={'accept': 'application/json'})
+            if detailed_record.status_code == 200:
+                results.append(detailed_record.json())
 
     return results
 
