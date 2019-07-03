@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import argparse
+import json
 from algorithms import (
     Processor,
     OneDimensionCategoricalHistogram,
@@ -10,13 +11,7 @@ from algorithms import (
 )
 
 
-def preprocess(
-    algorithm,
-    id,
-    attributes,
-    dataset,
-    precision=5
-):
+def preprocess(args):
 
     algorithms = {
         '1d_categorical_histogram': OneDimensionCategoricalHistogram,
@@ -25,8 +20,14 @@ def preprocess(
         '2d_numerical_histogram': TwoDimensionNumericalHistogram
     }
 
-    Algorithm = algorithms[algorithm]
-    processor = Processor(Algorithm(id, attributes, dataset, precision))
+    Algorithm = algorithms[args.algorithm]
+
+    request = None
+
+    if (args.request):
+        request = json.loads(args.request)
+
+    processor = Processor(Algorithm(args.computation, args.attributes, args.dataset, args.precision, request))
     processor.process()
 
 
@@ -69,10 +70,16 @@ def main():
         default=5,
         type=int,
         help='The number of decimal digits to be consider for floats (default: %(default)s)')
+    parser.add_argument(
+        '-r',
+        '--request',
+        type=str,
+        help='The description of the computation request')
+
     parser.add_argument('--version', action='version', version='%(prog)s 0.1')
     args = parser.parse_args()
 
-    preprocess(args.algorithm, args.computation, args.attributes, args.dataset, args.precision)
+    preprocess(args)
 
 
 if __name__ == '__main__':

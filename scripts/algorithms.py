@@ -24,11 +24,12 @@ class Attribute:
 
 
 class Strategy(metaclass=abc.ABCMeta):
-    def __init__(self, id, attributes, dataset, precision=5):
+    def __init__(self, id, attributes, dataset, precision=5, request=None):
         self._id = id
         self._rattributes = attributes
         self._dataset = dataset
         self._precision = precision
+        self._request = request
         self._attributes = None
         self._directory = '{0}/{1}'.format(DATASET_DIRECTORY, id)
         self._file_path = '{0}/{1}.txt'.format(self._directory, id)
