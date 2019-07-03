@@ -1,6 +1,7 @@
 import abc
 import os
 import decimal
+from collections import defaultdict
 from settings import DATASET_DIRECTORY, SMPC_GLOBAL_DIRECTORY, MESH_TERMS, MESH_INVERSED, MAPPING
 from catalogue_api import get_catalogue_records, normalize_attributes
 from utils import write_json, read_json, hash_file, load_dataset
@@ -93,7 +94,26 @@ class CategoricalHistogram(Strategy):
 
     def get_dataset(self):
         attributes_by_name = self.get_attributes_by_key('name')
-        records = get_catalogue_records(';'.join(attributes_by_name))
+
+        data = defaultdict(set)
+
+        if(self._request and 'raw_request' in self._request):
+            raw_request = self._request['raw_request']
+
+            for rec in raw_request:
+                for key in rec:
+                    if isinstance(rec[key], list):
+                        data[key].update(rec[key])
+                    else:
+                        data[key].add(rec[key])
+
+        data['keywords'] = ';'.join(attributes_by_name)
+        data['consent'] = ';'.join(data['consent'])
+        data['datatype'] = ';'.join(data['datatype'])
+        data = {k: v for k, v in data.items()}
+
+        records = get_catalogue_records(data)
+        # records = read_json(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'patient.json'))
         keywords = list(map(lambda rec: rec['data']['keywords'], records))
         return keywords
 
