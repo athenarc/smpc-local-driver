@@ -4,11 +4,8 @@ from settings import CATALOGUE_EXPLORER_API, CATALOGUE_MESH_API
 from utils import lcs
 
 
-def get_catalogue_records(keywords):
+def get_catalogue_records(data):
     results = []
-    data = {
-        'keywords': keywords
-    }
     SEARCH_URL = '{0}/search/'.format(CATALOGUE_EXPLORER_API)
 
     SEARCH_URL = '{0}search/'.format(CATALOGUE_EXPLORER_API)
