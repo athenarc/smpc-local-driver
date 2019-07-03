@@ -58,7 +58,7 @@ class Client extends EventEmitter {
     }
 
     const attr = this.job.attributes.map(a => `"${a.name}"`)
-    const args = [`-c ${this.job.id}`, `-d ${path.resolve(__dirname, DATASET)}`, `-a ${attr.join(' ')}`, `-g ${this.job.algorithm}`]
+    const args = [`-c ${this.job.id}`, `-d ${path.resolve(__dirname, DATASET)}`, `-a ${attr.join(' ')}`, `-g ${this.job.algorithm}`, `-r ${JSON.stringify(this.job)}`]
     this.preprocessCMD = spawn(PREPROCESS_CMD, args, { cwd: SCALE, shell: true, detached: true })
 
     this.preprocessCMD.stderr.on('data', (data) => { console.log(data.toString()) })
