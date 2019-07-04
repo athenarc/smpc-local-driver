@@ -1,6 +1,7 @@
 import abc
 import os
 import decimal
+from functools import wraps
 from settings import DATASET_DIRECTORY, MESH_TERMS, MESH_INVERSED, MAPPING
 from catalogue_api import normalize_attributes
 from utils import write_json, hash_file
@@ -28,7 +29,7 @@ class Strategy(metaclass=abc.ABCMeta):
     def __init__(self, id, attributes, dataset, precision=5, request=None):
         self._id = id
         self._rattributes = attributes
-        self._dataset = dataset
+        self._file = dataset
         self._precision = precision
         self._request = request
         self._attributes = None
@@ -91,6 +92,21 @@ class CategoricalHistogram(Strategy):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._provider = CatalogueDataProvider()
+
+    def _preprocess(validate_num):
+        def decorator(func):
+            @wraps(func)
+            def preprocess(self, *args, **kwargs):
+                self.validate(validate_num)
+                self.process_attributes()
+                self._mapping = self.get_mapping()
+                request = self._request['raw_request'] if self._request and 'raw_request' in self._request else None
+                self._dataset = self._provider.get_dataset(self.get_attributes_by_key('name'), request)
+
+                return func(self, *args, **kwargs)
+
+            return preprocess
+        return decorator
 
     def validate(self, num):
         assert self._rattributes is not None, 'Empty attributes'
@@ -166,6 +182,24 @@ class NumericalHistogram(Strategy):
 
         return results
 
+    def _preprocess(validate_num):
+        def decorator(func):
+            @wraps(func)
+            def preprocess(self, *args, **kwargs):
+                self.validate(validate_num)
+                self.process_attributes()
+                self._dataset = self._provider.get_dataset(self._file)
+                self._dataset.columns = normalize_attributes(self._dataset.columns)
+                self.add_data_types(self._dataset)
+                self.validate_normalized_attributes(self._dataset)
+
+                delete_cols = set(self._dataset.columns) - set(self.get_attributes_by_key('code'))
+                self._dataset = self._dataset.drop(list(delete_cols), axis=1)
+                return func(self, *args, **kwargs)
+
+            return preprocess
+        return decorator
+
     def out(self, out):
         self.make_directory()
         self.write_output(out)
@@ -182,89 +216,64 @@ class NumericalHistogram(Strategy):
 
 
 class OneDimensionCategoricalHistogram(CategoricalHistogram):
+    @CategoricalHistogram._preprocess(1)
     def process(self):
-        self.validate(1)
-        self.process_attributes()
-        mapping = self.get_mapping()
-        results = []
-        request = self._request['raw_request'] if self._request and 'raw_request' in self._request else None
-        keywords = self._provider.get_dataset(self.get_attributes_by_key('name'), request)
-
         # Flatten keywords and filter those that are not mesh terms
-        keywords = [k['value'] for sublist in keywords for k in sublist if k['value'] in MESH_INVERSED]
+        keywords = [k['value'] for sublist in self._dataset for k in sublist if k['value'] in MESH_INVERSED]
+        results = []
 
         for k in keywords:
-            for m in mapping[0]:
+            for m in self._mapping[0]:
                 if (m in MESH_INVERSED[k]['id']):
-                    results.append(mapping[0][m])
+                    results.append(self._mapping[0][m])
 
-        self.out(results, mapping)
+        self.out(results, self._mapping)
 
 
 class TwoDimensionCategoricalHistogram(CategoricalHistogram):
+    @CategoricalHistogram._preprocess(2)
     def process(self):
-        self.validate(2)
-        self.process_attributes()
-        mapping = self.get_mapping()
         results = []
-        request = self._request['raw_request'] if self._request and 'raw_request' in self._request else None
-        records = self._provider.get_dataset(self.get_attributes_by_key('name'), request)
 
-        for rec in records:
+        for rec in self._dataset:
             first = []
             second = []
             for k in rec:
                 if k['value'] in MESH_INVERSED:
-                    for m in mapping[0]:
+                    for m in self._mapping[0]:
                         if (m in MESH_INVERSED[k['value']]['id']):
-                            first.append(mapping[0][m])
-                    for m in mapping[1]:
+                            first.append(self._mapping[0][m])
+                    for m in self._mapping[1]:
                         if (m in MESH_INVERSED[k['value']]['id']):
-                            second.append(mapping[1][m])
+                            second.append(self._mapping[1][m])
 
             # Get only the first mapping. Ignore multiple values per attribute.
             if len(first) > 0 and len(second) > 0:
                 results.append(first[0])
                 results.append(second[0])
 
-        self.out(results, mapping)
+        self.out(results, self._mapping)
 
 
 class OneDimensionNumericalHistogram(NumericalHistogram):
+    @NumericalHistogram._preprocess(1)
     def process(self):
-        self.validate(1)
-        self.process_attributes()
-        dataset = self._provider.get_dataset(self._dataset)
-        dataset.columns = normalize_attributes(dataset.columns)
-        self.add_data_types(dataset)
-        self.validate_normalized_attributes(dataset)
+        results = self.process_column(self._attributes[0], self._dataset)
 
-        delete_cols = set(dataset.columns) - set(self.get_attributes_by_key('code'))
-        dataset = dataset.drop(list(delete_cols), axis=1)
-        results = self.process_column(self._attributes[0], dataset)
-
-        del dataset
+        del self._dataset
         self.out(results)
 
 
 class TwoDimensionNumericalHistogram(NumericalHistogram):
+    @NumericalHistogram._preprocess(2)
     def process(self):
-        self.validate(2)
-        self.process_attributes()
-        dataset = self._provider.get_dataset(self._dataset)
-        dataset.columns = normalize_attributes(dataset.columns)
-        self.add_data_types(dataset)
-        self.validate_normalized_attributes(dataset)
-
-        delete_cols = set(dataset.columns) - set(self.get_attributes_by_key('code'))
-        dataset = dataset.drop(list(delete_cols), axis=1)
         results = []
-        dataset_size = dataset.shape[0]
+        dataset_size = self._dataset.shape[0]
 
         for attribute in self._attributes:
-            results.append(self.process_column(attribute, dataset))
+            results.append(self.process_column(attribute, self._dataset))
 
-        del dataset
+        del self._dataset
 
         out = []
         for index in range(dataset_size):
