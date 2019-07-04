@@ -16,7 +16,7 @@ def parse_xml(data_file_name):
         attribute = tname.find(prefix + 'TypeName').text
         if attribute not in data_dict.keys():
             data_dict[attribute] = []
-        data_dict[attribute].append(convertToType(tname.find(prefix + 'Value').text))
+        data_dict[attribute].append(convert_to_type(tname.find(prefix + 'Value').text))
     data = pd.DataFrame.from_dict(data_dict)
     del data_dict
     return data
@@ -53,7 +53,7 @@ def search_loaded_json_by_field(field, value, loaded_json):
     raise ValueError("The attribute you provided is not catalogued")
 
 
-def convertToType(value):
+def convert_to_type(value):
     try:
         return int(value)
     except Exception:

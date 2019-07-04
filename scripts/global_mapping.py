@@ -4,7 +4,7 @@ import argparse
 
 from utils import read_json, write_json
 
-def convertToType(value):
+def convert_to_type(value):
     try:
         return int(value)
     except Exception:
