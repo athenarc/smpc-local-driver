@@ -1,10 +1,10 @@
 import abc
 import os
 import decimal
-from collections import defaultdict
-from settings import DATASET_DIRECTORY, SMPC_GLOBAL_DIRECTORY, MESH_TERMS, MESH_INVERSED, MAPPING
-from catalogue_api import get_catalogue_records, normalize_attributes
-from utils import write_json, read_json, hash_file, load_dataset
+from settings import DATASET_DIRECTORY, MESH_TERMS, MESH_INVERSED, MAPPING
+from catalogue_api import normalize_attributes
+from utils import write_json, hash_file
+from data_providers import CatalogueDataProvider, FileDataProvider
 
 MAX_PRECISION = 10
 
@@ -83,39 +83,18 @@ class Strategy(metaclass=abc.ABCMeta):
         pass
 
     @abc.abstractmethod
-    def out(self, out, mapping):
+    def out(self, out):
         pass
 
 
 class CategoricalHistogram(Strategy):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._provider = CatalogueDataProvider()
+
     def validate(self, num):
         assert self._rattributes is not None, 'Empty attributes'
         assert len(self._rattributes) == num, 'Wrong number of attributes'
-
-    def get_dataset(self):
-        attributes_by_name = self.get_attributes_by_key('name')
-
-        data = defaultdict(set)
-
-        if(self._request and 'raw_request' in self._request):
-            raw_request = self._request['raw_request']
-
-            for rec in raw_request:
-                for key in rec:
-                    if isinstance(rec[key], list):
-                        data[key].update(rec[key])
-                    else:
-                        data[key].add(rec[key])
-
-        data['keywords'] = ';'.join(attributes_by_name)
-        data['consent'] = ';'.join(data['consent'])
-        data['datatype'] = ';'.join(data['datatype'])
-        data = {k: v for k, v in data.items()}
-
-        records = get_catalogue_records(data)
-        # records = read_json(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'patient.json'))
-        keywords = list(map(lambda rec: rec['data']['keywords'], records))
-        return keywords
 
     def out(self, out, mapping):
         self.make_directory()
@@ -135,6 +114,10 @@ class CategoricalHistogram(Strategy):
 
 
 class NumericalHistogram(Strategy):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._provider = FileDataProvider()
+
     def validate(self, num):
         assert self._rattributes is not None, 'Empty attributes'
         assert len(self._rattributes) == num, 'Wrong number of attributes'
@@ -146,9 +129,6 @@ class NumericalHistogram(Strategy):
 
         for attr in self._attributes:
             assert attr.type != 'Categorical', 'Categorical attribute provided'
-
-    def get_dataset(self):
-        return load_dataset(self._dataset)
 
     def process_column(self, attribute, dataset):
         if attribute.type == 'Numerical_int':
@@ -207,7 +187,8 @@ class OneDimensionCategoricalHistogram(CategoricalHistogram):
         self.process_attributes()
         mapping = self.get_mapping()
         results = []
-        keywords = self.get_dataset()
+        request = self._request['raw_request'] if self._request and 'raw_request' in self._request else None
+        keywords = self._provider.get_dataset(self.get_attributes_by_key('name'), request)
 
         # Flatten keywords and filter those that are not mesh terms
         keywords = [k['value'] for sublist in keywords for k in sublist if k['value'] in MESH_INVERSED]
@@ -226,7 +207,8 @@ class TwoDimensionCategoricalHistogram(CategoricalHistogram):
         self.process_attributes()
         mapping = self.get_mapping()
         results = []
-        records = self.get_dataset()
+        request = self._request['raw_request'] if self._request and 'raw_request' in self._request else None
+        records = self._provider.get_dataset(self.get_attributes_by_key('name'), request)
 
         for rec in records:
             first = []
@@ -252,7 +234,7 @@ class OneDimensionNumericalHistogram(NumericalHistogram):
     def process(self):
         self.validate(1)
         self.process_attributes()
-        dataset = self.get_dataset()
+        dataset = self._provider.get_dataset(self._dataset)
         dataset.columns = normalize_attributes(dataset.columns)
         self.add_data_types(dataset)
         self.validate_normalized_attributes(dataset)
@@ -269,7 +251,7 @@ class TwoDimensionNumericalHistogram(NumericalHistogram):
     def process(self):
         self.validate(2)
         self.process_attributes()
-        dataset = self.get_dataset()
+        dataset = self._provider.get_dataset(self._dataset)
         dataset.columns = normalize_attributes(dataset.columns)
         self.add_data_types(dataset)
         self.validate_normalized_attributes(dataset)
