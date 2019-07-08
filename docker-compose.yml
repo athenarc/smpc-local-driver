@@ -9,10 +9,10 @@ services:
       - .env.production
     volumes:
       - ./certs:/smpc-local-driver/certs
-      - ./data:/smpc-local-driver/data
+      - ./datasets:/smpc-local-driver/datasets
       - ./scale/certs:/SCALE-MAMBA/Cert-Store
       - ./scale/data:/SCALE-MAMBA/Data
-      - smpc-local-driver-datasets:/smpc-local-driver/datasets
+      - smpc-local-driver-requests:/smpc-local-driver/requests
     ports:
       - 3003:3003
     networks:
@@ -23,4 +23,4 @@ networks:
     name: smpc_local_driver
 
 volumes:
-  smpc-local-driver-datasets:
+  smpc-local-driver-requests:

@@ -56,6 +56,9 @@ RUN ./install.sh
 
 RUN mkdir -p certs
 RUN mkdir -p datasets
+RUN mkdir -p requests
+RUN mkdir -p scale/certs
+RUN mkdir -p scale/data
 
 WORKDIR /smpc-local-drive/scripts
 RUN pip3 install -r requirements.txt

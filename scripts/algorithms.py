@@ -2,7 +2,7 @@ import abc
 import os
 import decimal
 from functools import wraps
-from settings import DATASET_DIRECTORY, MESH_TERMS, MESH_INVERSED, MAPPING
+from settings import REQUEST_DIRECTORY, MESH_TERMS, MESH_INVERSED, MAPPING
 from catalogue_api import normalize_attributes
 from utils import write_json, hash_file
 from data_providers import CatalogueDataProvider, FileDataProvider
@@ -33,7 +33,7 @@ class Strategy(metaclass=abc.ABCMeta):
         self._precision = precision
         self._request = request
         self._attributes = None
-        self._directory = '{0}/{1}'.format(DATASET_DIRECTORY, id)
+        self._directory = '{0}/{1}'.format(REQUEST_DIRECTORY, id)
         self._file_path = '{0}/{1}.txt'.format(self._directory, id)
         self._desc_path = '{0}/{1}.json'.format(self._directory, id)
 

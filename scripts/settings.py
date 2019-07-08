@@ -8,7 +8,7 @@ load_dotenv(dotenv_path=ENV_PATH)
 CATALOGUE_API = os.getenv('CATALOGUE_API')
 CATALOGUE_EXPLORER_API = CATALOGUE_API + "catalogue_explorer"
 CATALOGUE_MESH_API = CATALOGUE_API + "transmesh"
-DATASET_DIRECTORY = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../datasets')
+REQUEST_DIRECTORY = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../requests')
 SMPC_GLOBAL_DIRECTORY = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../smpc-global/')
 
 MESH_BY_CODES = read_json(os.path.join(SMPC_GLOBAL_DIRECTORY, 'meshTermsByCode.json'))
