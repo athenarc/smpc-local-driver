@@ -11,7 +11,7 @@ const CLIENT_CMD = process.env.NODE_ENV === 'development' ? 'fake_scale.sh' : `$
 const PREPROCESS_CMD = `python3 ${SCRIPTS}/preprocessor.py`
 const REQUEST_FOLDER = path.resolve(__dirname, 'requests')
 const DATASET_FOLDER = path.resolve(__dirname, 'datasets')
-const DATASET = process.env.DATASET || path.resolve(DATASET_FOLDER, 'cvi_identified.csv')
+const DATASET = process.env.DATASET || path.resolve(DATASET_FOLDER, 'dataset.csv')
 
 class Client extends EventEmitter {
   constructor (id) {
