@@ -2,11 +2,13 @@ import abc
 import requests
 from tqdm import tqdm
 from collections import defaultdict
-from settings import CATALOGUE_EXPLORER_API
+from settings import CATALOGUE_EXPLORER_API, DATASET_DIRECTORY, USE_CATALOGUE
 import pandas as pd
 import xml.etree.ElementTree as ET
 import re
+import os
 from utils import convert_to_type
+from utils import read_json
 
 
 class DataProvider:
@@ -52,8 +54,13 @@ class CatalogueDataProvider(DataProvider):
         data['consent'] = ';'.join(data['consent'])
         data['datatype'] = ';'.join(data['datatype'])
         data = {k: v for k, v in data.items()}
+        records = []
 
-        records = self.get_catalogue_records(data)
+        if USE_CATALOGUE == '1':
+            records = self.get_catalogue_records(data)
+        else:
+            records = read_json(os.path.join(DATASET_DIRECTORY, 'dataset.json'))
+
         keywords = list(map(lambda rec: rec['data']['keywords'], records))
         return keywords
 
