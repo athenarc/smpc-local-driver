@@ -27,5 +27,7 @@ sudo ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
 sudo docker-compose --version
 
 mkdir -p certs
-mkdir -p data
+mkdir -p datasets
+mkdir -p requests
 mkdir -p scale/certs
+mkdir -p scale/data

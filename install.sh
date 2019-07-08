@@ -4,3 +4,4 @@ git submodule update
 yarn install
 
 mkdir -p datasets
+mkdir -p requests
