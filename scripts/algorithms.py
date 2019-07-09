@@ -6,6 +6,7 @@ from settings import REQUEST_DIRECTORY, MESH_TERMS, MESH_INVERSED, MAPPING
 from catalogue_api import normalize_attributes
 from utils import write_json, hash_file
 from data_providers import CatalogueDataProvider, FileDataProvider
+import numpy as np
 
 MAX_PRECISION = 10
 
@@ -225,21 +226,19 @@ class OneDimensionCategoricalHistogram(CategoricalHistogram):
     def process(self):
         # Flatten keywords and filter those that are not mesh terms
         keywords = [k['value'] for sublist in self._dataset for k in sublist if k['value'] in MESH_INVERSED]
-        results = []
+        results = np.zeros((len(self._mapping[0])))
 
         for k in keywords:
             for m in self._mapping[0]:
                 if (m in MESH_INVERSED[k]['id']):
-                    results.append(self._mapping[0][m])
-
+                    results[self._mapping[0][m]]+= 1
         self.out(results, self._mapping)
 
 
 class TwoDimensionCategoricalHistogram(CategoricalHistogram):
     @CategoricalHistogram._preprocess(2)
     def process(self):
-        results = []
-
+        results = np.zeros((len(self._mapping[0]),len(self._mapping[1])))
         for rec in self._dataset:
             first = []
             second = []
@@ -251,12 +250,11 @@ class TwoDimensionCategoricalHistogram(CategoricalHistogram):
                     for m in self._mapping[1]:
                         if (m in MESH_INVERSED[k['value']]['id']):
                             second.append(self._mapping[1][m])
-
             # Get only the first mapping. Ignore multiple values per attribute.
             if len(first) > 0 and len(second) > 0:
-                results.append(first[0])
-                results.append(second[0])
-
+                results[first[0],second[0]] += 1
+        results = results.flatten()
+        # results order is for each value of first list all second (11,12,13...,21,22,23,....)
         self.out(results, self._mapping)
 
 
