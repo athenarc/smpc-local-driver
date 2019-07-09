@@ -5,3 +5,6 @@ yarn install
 
 mkdir -p datasets
 mkdir -p requests
+
+cd scripts
+pip3 install -r requirements.txt
