@@ -130,7 +130,7 @@ class CategoricalHistogram(Histogram):
         description['intToAttribute'] = []
 
         if len(mapping) == 2:
-            description['cellsY'] = len(mapping[1])
+            description['cellsY'] = len(mapping[1])*len(mapping[0])
 
         write_json(self._desc_path, description)
 
