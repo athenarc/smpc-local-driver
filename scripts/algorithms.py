@@ -88,7 +88,12 @@ class Strategy(metaclass=abc.ABCMeta):
         pass
 
 
-class CategoricalHistogram(Strategy):
+class Histogram(Strategy):
+    def histogram():
+        pass
+
+
+class CategoricalHistogram(Histogram):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._provider = CatalogueDataProvider()
@@ -129,7 +134,7 @@ class CategoricalHistogram(Strategy):
         write_json(self._desc_path, description)
 
 
-class NumericalHistogram(Strategy):
+class NumericalHistogram(Histogram):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._provider = FileDataProvider()

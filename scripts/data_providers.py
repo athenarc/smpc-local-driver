@@ -1,14 +1,13 @@
 import abc
 import requests
-from tqdm import tqdm
-from collections import defaultdict
-from settings import CATALOGUE_EXPLORER_API, DATASET_DIRECTORY, USE_CATALOGUE
-import pandas as pd
 import xml.etree.ElementTree as ET
 import re
 import os
-from utils import convert_to_type
-from utils import read_json
+import pandas as pd
+from tqdm import tqdm
+from collections import defaultdict
+from utils import convert_to_type, read_json
+from settings import CATALOGUE_EXPLORER_API, DATASET_DIRECTORY, USE_CATALOGUE
 
 
 class DataProvider:
