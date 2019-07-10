@@ -130,7 +130,7 @@ class CategoricalHistogram(Histogram):
         description['intToAttribute'] = []
 
         if len(mapping) == 2:
-            description['cellsY'] = len(mapping[1])*len(mapping[0])
+            description['cellsY'] = len(mapping[0]) * len(mapping[1])
 
         write_json(self._desc_path, description)
 
@@ -226,19 +226,20 @@ class OneDimensionCategoricalHistogram(CategoricalHistogram):
     def process(self):
         # Flatten keywords and filter those that are not mesh terms
         keywords = [k['value'] for sublist in self._dataset for k in sublist if k['value'] in MESH_INVERSED]
-        results = np.zeros((len(self._mapping[0])))
+        results = np.zeros(len(self._mapping[0]), dtype=int)
 
         for k in keywords:
             for m in self._mapping[0]:
                 if (m in MESH_INVERSED[k]['id']):
-                    results[self._mapping[0][m]]+= 1
+                    results[self._mapping[0][m]] += 1
         self.out(results, self._mapping)
 
 
 class TwoDimensionCategoricalHistogram(CategoricalHistogram):
     @CategoricalHistogram._preprocess(2)
     def process(self):
-        results = np.zeros((len(self._mapping[0]),len(self._mapping[1])))
+        results = np.zeros((len(self._mapping[0]), len(self._mapping[1])), dtype=int)
+
         for rec in self._dataset:
             first = []
             second = []
@@ -252,7 +253,7 @@ class TwoDimensionCategoricalHistogram(CategoricalHistogram):
                             second.append(self._mapping[1][m])
             # Get only the first mapping. Ignore multiple values per attribute.
             if len(first) > 0 and len(second) > 0:
-                results[first[0],second[0]] += 1
+                results[first[0], second[0]] += 1
         results = results.flatten()
         # results order is for each value of first list all second (11,12,13...,21,22,23,....)
         self.out(results, self._mapping)
