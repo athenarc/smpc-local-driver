@@ -82,7 +82,7 @@ def main():
         '-g',
         '--group',
         action='store_true',
-        help='Create a file where each mesh term has its childer.')
+        help='Create a file where each mesh term has its children.')
     parser.add_argument('--version', action='version', version='%(prog)s 0.1')
     args = parser.parse_args()
 
