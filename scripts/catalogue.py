@@ -58,6 +58,18 @@ def group(args):
     write_file(args.output, out)
 
 
+def keywords(args):
+    keywords = read_file(args.catalogue)
+    mesh = read_file('../smpc-global/meshTermsInversed.json')
+    out = []
+
+    for k in keywords:
+        if k['label'] in mesh:
+            out.append(mesh[k['label']])
+
+    write_file(args.output, out)
+
+
 def main():
     parser = argparse.ArgumentParser(
         description=(
@@ -93,6 +105,11 @@ def main():
         '--group',
         action='store_true',
         help='Create a file where each mesh term has its children.')
+    parser.add_argument(
+        '-k',
+        '--keywords',
+        action='store_true',
+        help='Create a file with keywords as mesh terms. File structure must be as returned from the catalogue API.')
     parser.add_argument('--version', action='version', version='%(prog)s 0.1')
     args = parser.parse_args()
 
@@ -105,6 +122,8 @@ def main():
         code(args)
     elif(args.group):
         group(args)
+    elif(args.keywords):
+        keywords(args)
     else:
         normal(args)
 
