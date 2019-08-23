@@ -9,7 +9,6 @@ def get_catalogue_records(data):
     SEARCH_URL = '{0}/search/'.format(CATALOGUE_EXPLORER_API)
 
     res = requests.post(url=SEARCH_URL, data=data, headers={'accept': 'application/json', 'Content-Type': 'application/x-www-form-urlencoded'})
-
     if res.status_code != 200:
         return results
 
@@ -37,6 +36,10 @@ def map_attributes_to_mesh(value, banned_columns=None):
 
     URL = '{0}/{1}'.format(CATALOGUE_MESH_API, 'translate/')
     response = requests.post(URL, data=data)
+
+    if response.status_code != 200:
+        return None
+
     maximum_ed = None
     mesh_code = None
 
