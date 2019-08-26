@@ -10,11 +10,11 @@ Arguments = namedtuple('args', ('algorithm', 'computation', 'attributes', 'datas
 computations = {
     '1d_categorical_histogram': {
         'id': 'test_id_1',
-        'attributes': ['C14.280'],
+        'attributes': ['G07.100.100.160.120.699.500'],
         'request':
         json.dumps(
             {
-                "attributes": [{"name": "C14.280"}],
+                "attributes": [{"name": "G07.100.100.160.120.699.500"}],
                 "algorithm": "1d_categorical_histogram",
                 "dataProviders": [0],
                 "link": "http://example.com/download",
@@ -23,17 +23,9 @@ computations = {
                 "status": "1",
                 "totalClients": "1",
                 "raw_request": [{
-                    "consent": "marketing",
-                    "datatype": "crs_identified,Magnetic Resonance Imaging (MRI) of Heart,Cardiac CT",
-                    "keywords": ["Heart Diseases"]
-                }, {
-                    "consent": "academic research",
-                    "datatype": "crs_identified,Echocardiography",
-                    "keywords": ["Heart Diseases"]
-                }, {
-                    "consent": "academic research",
-                    "datatype": "crs_identified,Cardiac CT,Echocardiography",
-                    "keywords": ["Heart Diseases"]
+                    "consent": "anonymous data",
+                    "datatype": "centricity_identified",
+                    "keywords": ["Obesity"]
                 }]
             }
         )
