@@ -14,14 +14,15 @@ services:
       - ./scale/data:/SCALE-MAMBA/Data
       - smpc-local-driver-requests:/smpc-local-driver/requests
     ports:
-      - 3003:3003
-    network_mode: "host"
-    networks:
-      - local_driver
+      - 2222:2222
+    #network_mode: "host"
 
 networks:
-  local_driver:
-    name: smpc_local_driver
+  default:
+    external:
+      name: local_catalogue_v3_default
+#    name: smpc_local_driver
+#    external: true
 
 volumes:
   smpc-local-driver-requests:
