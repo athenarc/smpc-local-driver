@@ -15,6 +15,7 @@ services:
       - smpc-local-driver-requests:/smpc-local-driver/requests
     ports:
       - 3003:3003
+    network_mode: "host"
     networks:
       - local_driver
 
