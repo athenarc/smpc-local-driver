@@ -7,7 +7,7 @@ import pandas as pd
 from tqdm import tqdm
 from collections import defaultdict
 from utils import convert_to_type, read_json
-from settings import CATALOGUE_EXPLORER_API, DATASET_DIRECTORY, USE_CATALOGUE
+from settings import CATALOGUE_SEARCH_URL, CATALOGUE_RECORD_URL, DATASET_DIRECTORY, USE_CATALOGUE
 
 
 class DataProvider:
@@ -19,22 +19,23 @@ class DataProvider:
 class CatalogueDataProvider(DataProvider):
     def get_catalogue_records(self, data):
         results = []
-        SEARCH_URL = '{0}/search/'.format(CATALOGUE_EXPLORER_API)
 
-        res = requests.post(url=SEARCH_URL, data=data, headers={'accept': 'application/json', 'Content-Type': 'application/x-www-form-urlencoded'})
+        res = requests.post(url=CATALOGUE_SEARCH_URL, data=data, headers={'accept': 'application/json', 'Content-Type': 'application/x-www-form-urlencoded'})
 
         if res.status_code != 200:
             return results
 
         res = res.json()
 
-        for entry in tqdm(res['data'][:1]):
-            for rec in tqdm(entry['records']):
-                catalogue_id = rec['catalogue_id']
-                RECORD_URL = '{0}/getRecord/?catalogue_id={1}'.format(CATALOGUE_EXPLORER_API, catalogue_id)
-                detailed_record = requests.get(url=RECORD_URL, headers={'accept': 'application/json'})
-                if detailed_record.status_code == 200:
-                    results.append(detailed_record.json())
+        if 'data_item_ids' not in res:
+            return results
+
+        for entry in tqdm(res['data_item_ids']):
+            catalogue_id = entry
+            RECORD_URL = '{0}/{1}'.format(CATALOGUE_RECORD_URL, catalogue_id)
+            detailed_record = requests.get(url=RECORD_URL, headers={'accept': 'application/json'})
+            if detailed_record.status_code == 200:
+                results.append(detailed_record.json())
 
         return results
 
@@ -60,7 +61,7 @@ class CatalogueDataProvider(DataProvider):
         else:
             records = read_json(os.path.join(DATASET_DIRECTORY, 'dataset.json'))
 
-        keywords = list(map(lambda rec: rec['data']['keywords'], records))
+        keywords = list(map(lambda rec: rec['_source']['keywords'], records))
         return keywords
 
 
