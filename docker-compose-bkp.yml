@@ -1,0 +1,26 @@
+version: '3.7'
+services:
+  local_driver:
+    container_name: smpc_local_driver
+    image: smpc_local_driver:latest
+    build:
+      context: ./
+    env_file:
+      - .env.production
+    volumes:
+      - ./certs:/smpc-local-driver/certs
+      - ./datasets:/smpc-local-driver/datasets
+      - ./scale/certs:/SCALE-MAMBA/Cert-Store
+      - ./scale/data:/SCALE-MAMBA/Data
+      - smpc-local-driver-requests:/smpc-local-driver/requests
+    ports:
+      - 2222:2222
+    networks:
+      - local_driver
+
+networks:
+  local_driver:
+    name: smpc_local_driver
+
+volumes:
+  smpc-local-driver-requests:
