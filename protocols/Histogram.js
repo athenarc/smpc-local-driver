@@ -2,7 +2,6 @@ const path = require('path')
 const { spawn } = require('child_process')
 
 const Protocol = require('./Protocol')
-const Client = require('../ClientSMPC')
 const { print, pack, unpack } = require('../helpers')
 
 const SCALE = process.env.SMPC_ENGINE
@@ -15,23 +14,14 @@ const DATASET = process.env.DATASET || path.resolve(DATASET_FOLDER, 'dataset.csv
 class Histogram extends Protocol {
   constructor ({ ws }) {
     super({ ws })
-    this.client = new Client(process.env.ID)
-    this.job = null
-    this._registerToClient()
-  }
-
-  _registerToClient () {
-    this.client.on('error', msg => {
-      this.handleClientError(msg)
-    })
-
-    this.client.on('exit', msg => {
-      this.ws.send(pack({ message: 'exit', entity: 'client', ...msg }))
-    })
   }
 
   handleClientError (msg) {
     this.ws.send(pack({ message: 'error', ...msg }))
+  }
+
+  handleClientExit (msg) {
+    this.ws.send(pack({ message: 'exit', entity: 'client', ...msg }))
   }
 
   handleDataInfo (msg) {
