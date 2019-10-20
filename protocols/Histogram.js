@@ -2,7 +2,7 @@ const path = require('path')
 const { spawn } = require('child_process')
 
 const Protocol = require('./Protocol')
-const { print, pack, unpack } = require('../helpers')
+const { pack } = require('../helpers')
 
 const SCALE = process.env.SMPC_ENGINE
 const SCRIPTS = path.resolve(__dirname, '../', 'scripts')
@@ -57,28 +57,18 @@ class Histogram extends Protocol {
     })
   }
 
-  handleOpen ({ ws }) {
-    console.log('Connection opened.')
-  }
-
   handleClose ({ ws, code, reason }) {
-    console.log(`Connection closed with code ${code} and reason ${reason}.`)
     this.client.removeAllListeners()
     this.client.terminate()
   }
 
   handleError ({ ws, err }) {
-    console.log(err)
     this.client.removeAllListeners()
     this.client.terminate()
   }
 
   handleMessage ({ ws, msg }) {
-    print(`Message: ${msg}`)
-    msg = unpack(msg)
-
     if (msg.message === 'job-info') {
-      this.job = { ...msg.job }
       this.client.setJob({ ...msg.job })
     }
 

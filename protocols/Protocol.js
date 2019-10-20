@@ -6,34 +6,27 @@ class Protocol {
       throw new TypeError('Cannot construct abstract Protocol instances directly')
     }
 
-    this.ws = ws
     this.client = new Client(process.env.ID)
     this.job = null
-    this._init()
+    this.ws = ws
     this._registerToClient()
   }
 
-  _init () {
-    // connection errors are handle on ws.on('error')
-    this.ws.on('open', () => this.handleOpen({ ws: this.ws }))
-
-    this.ws.on('close', (code, reason) => this.handleClose({ ws: this.ws, code, reason }))
-
-    this.ws.on('error', (err) => this.handleError({ ws: this.ws, err }))
-
-    this.ws.on('message', (msg) => this.handleMessage({ ws: this.ws, msg }))
+  _registerToClient () {
+    this.client.on('error', msg => this._clientErrorDecorator(msg))
+    this.client.on('exit', msg => this._clientExitDecorator(msg))
   }
 
-  _registerToClient () {
-    this.client.on('error', msg => this.handleClientError(msg))
-    this.client.on('exit', msg => this.handleClientExit(msg))
+  /* Decorators */
+  _clientErrorDecorator (msg) {
+    this.handleClientError(msg)
+  }
+
+  _clientExitDecorator (msg) {
+    this.handleClientExit(msg)
   }
 
   /* Abstract Methods */
-  handleOpen ({ ws }) {
-    throw new Error('handleOpen: Implementation Missing!')
-  }
-
   handleClose ({ ws, code, reason }) {
     throw new Error('handleClose: Implementation Missing!')
   }

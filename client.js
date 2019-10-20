@@ -4,7 +4,7 @@ const _ = require('lodash')
 const https = require('https')
 const fs = require('fs')
 const WebSocket = require('ws')
-const HistogramProtocol = require('./protocols/Histogram')
+const ProtocolHandler = require('./protocols/ProtocolHandler')
 const { print } = require('./helpers')
 
 const PORT = process.env.PORT || 3004
@@ -41,7 +41,7 @@ console.log(`Client ${process.env.ID} started on port ${PORT}.`)
 
 wss.on('connection', (ws) => {
   print('Connection Accepted!')
-  const client = new HistogramProtocol({ ws })
+  const client = new ProtocolHandler({ ws })
 })
 
 server.listen(process.env.PORT)
