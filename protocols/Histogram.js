@@ -12,8 +12,8 @@ const DATASET_FOLDER = path.resolve(__dirname, '../', 'datasets')
 const DATASET = process.env.DATASET || path.resolve(DATASET_FOLDER, 'dataset.csv')
 
 class Histogram extends Protocol {
-  constructor ({ ws }) {
-    super({ ws })
+  constructor ({ ws, id }) {
+    super({ ws, id })
   }
 
   handleClientError (msg) {

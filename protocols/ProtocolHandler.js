@@ -3,8 +3,9 @@ const { protocolMapping } = require('./index.js')
 const { print, unpack } = require('../helpers')
 
 class ProtocolHanlder {
-  constructor ({ ws }) {
+  constructor ({ ws, id }) {
     this.ws = ws
+    this.id = id
     this.protocol = null
     this._init()
   }
@@ -28,7 +29,7 @@ class ProtocolHanlder {
         const protocol = msg.job && msg.job.protocol
         if (protocolMapping.has(protocol)) {
           const Protocol = protocolMapping.get(protocol)
-          this.protocol = new Protocol({ ws: this.ws })
+          this.protocol = new Protocol({ ws: this.ws, id: this.id })
           this.protocol.job = { ...msg.job }
         }
 

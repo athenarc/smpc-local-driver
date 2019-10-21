@@ -41,7 +41,7 @@ console.log(`Client ${process.env.ID} started on port ${PORT}.`)
 
 wss.on('connection', (ws) => {
   print('Connection Accepted!')
-  const client = new ProtocolHandler({ ws })
+  const client = new ProtocolHandler({ ws, id: process.env.ID })
 })
 
 server.listen(process.env.PORT)

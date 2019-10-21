@@ -1,7 +1,7 @@
 const Client = require('../ClientSMPC')
 
 class Protocol {
-  constructor ({ ws }) {
+  constructor ({ ws, id }) {
     if (new.target === Protocol) {
       throw new TypeError('Cannot construct abstract Protocol instances directly')
     }
@@ -9,6 +9,7 @@ class Protocol {
     this.client = new Client(process.env.ID)
     this.job = null
     this.ws = ws
+    this.id = id
     this._registerToClient()
   }
 
