@@ -34,13 +34,13 @@ class Client extends EventEmitter {
       data = data.toString().toLowerCase()
       if (includeError(data, ['what()', 'aborted'])) {
         this.errors.push(data)
-        this.emit('error', { id: this.id, errors: this.errors })
+        this.emit('error', { id: this.id, error: { message: data } })
       }
     })
 
     this.client.on('exit', (code) => {
       console.log(`Client exited with code ${code}`)
-      this.emit('exit', { id: this.id, code, errors: this.errors })
+      this.emit('exit', { id: this.id, code, error: { message: this.errors.join(' ') } })
       this.terminate()
     })
   }

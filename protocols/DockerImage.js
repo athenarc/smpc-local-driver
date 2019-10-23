@@ -23,7 +23,7 @@ class DockerImage extends Protocol {
       this.ws.send(pack({ message: 'image-imported' }))
     } catch (err) {
       logger.error(err)
-      this.ws.send(pack({ message: 'error', reason: 'Error createing docker image' }))
+      this.ws.send(pack({ message: 'error', error: { message: 'Error creating docker image' } }))
     }
   }
 

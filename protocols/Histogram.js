@@ -1,6 +1,7 @@
 const path = require('path')
 const { spawn } = require('child_process')
 
+const logger = require('../config/winston')
 const Protocol = require('./Protocol')
 const { pack } = require('../helpers')
 
@@ -43,7 +44,7 @@ class Histogram extends Protocol {
     this.preprocessCMD.stderr.on('data', (data) => { console.log(data.toString()) })
     this.preprocessCMD.on('exit', async (code) => {
       if (code !== 0) {
-        this.handleClientError({ id: this.id, code, errors: this.errors })
+        this.handleClientError({ id: this.id, code, error: { message: `Preprocessing exited with code ${code}` } })
         return
       }
 
@@ -51,8 +52,8 @@ class Histogram extends Protocol {
         const datasetInfo = require(`${REQUEST_FOLDER}/${this.job.id}/${this.job.id}.json`)
         this.handleDataInfo({ id: this.id, datasetInfo: { ...datasetInfo } })
       } catch (e) {
-        console.log(e)
-        this.handleClientError({ id: this.id, errors: [e.message] })
+        logger.error(e)
+        this.handleClientError({ id: this.id, error: { message: `Error parsing dataset description` } })
       }
     })
   }
