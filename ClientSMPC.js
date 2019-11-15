@@ -7,7 +7,7 @@ const { includeError } = require('./helpers')
 
 const SCALE = process.env.SMPC_ENGINE
 const SCRIPTS = path.resolve(__dirname, 'scripts')
-const CLIENT_CMD = process.env.NODE_ENV === 'development' ? 'fake_scale.sh' : `${SCALE}/Client-Api.x`
+const CLIENT_CMD = process.env.NODE_ENV === 'development' ? './fake_scale.sh' : `${SCALE}/Client-Api.x`
 const PREPROCESS_CMD = `python3 ${SCRIPTS}/preprocessor.py`
 const REQUEST_FOLDER = path.resolve(__dirname, 'requests')
 const DATASET_FOLDER = path.resolve(__dirname, 'datasets')
@@ -58,7 +58,8 @@ class Client extends EventEmitter {
     }
 
     const attr = this.job.attributes.map(a => `"${a.name}"`)
-    const args = [`-c ${this.job.id}`, `-d ${path.resolve(__dirname, DATASET)}`, `-a ${attr.join(' ')}`, `-g ${this.job.algorithm}`, `-r ${JSON.stringify(this.job)}`]
+    const req = JSON.stringify(JSON.stringify(this.job)) // By appling two times stringify double quotes are escaped.
+    const args = [`-c ${this.job.id}`, `-d ${path.resolve(__dirname, DATASET)}`, `-a ${attr.join(' ')}`, `-g ${this.job.algorithm}`, `-r ${req}`]
     this.preprocessCMD = spawn(PREPROCESS_CMD, args, { cwd: SCALE, shell: true, detached: true })
 
     this.preprocessCMD.stderr.on('data', (data) => { console.log(data.toString()) })

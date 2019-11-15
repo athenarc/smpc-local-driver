@@ -4,6 +4,7 @@ import argparse
 
 from utils import read_json, write_json
 
+
 def convert_to_type(value):
     try:
         return int(value)
@@ -12,6 +13,7 @@ def convert_to_type(value):
             return float(value)
         except Exception:
             return value
+
 
 def map_mesh_terms(args):
     global_map = {}

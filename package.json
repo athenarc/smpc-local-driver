@@ -4,7 +4,7 @@
   "description": "Local driver SMPC framework",
   "main": "client.js",
   "scripts": {
-    "start": "nodemon --watch . --watch client.js --ignore ./datasets --ignore ./scripts",
+    "start": "nodemon --watch . --watch client.js --ignore ./datasets --ignore ./scripts --ignore ./requests",
     "serve": "node client.js",
     "lint": "standard"
   },

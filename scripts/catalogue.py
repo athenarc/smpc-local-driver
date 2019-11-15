@@ -20,8 +20,8 @@ def process(args, callback):
 
     catalogue = read_file(args.catalogue)
 
-    for entry in catalogue:
-        callback(entry, out)
+    for c in catalogue:
+        callback(catalogue[c], out)
 
     write_file(args.output, out)
 
@@ -45,9 +45,9 @@ def group(args):
 
     catalogue = read_file(args.catalogue)
 
-    for entry in catalogue:
-        normalized_catalogue[entry['id']] = entry
-        normalized_catalogue[entry['id']]['children'] = []
+    for c in catalogue:
+        normalized_catalogue[catalogue[c]['id']] = catalogue[c]
+        normalized_catalogue[catalogue[c]['id']]['children'] = []
 
     for id in normalized_catalogue:
         parent_id = normalized_catalogue[id]['parentCategoryId']
@@ -58,9 +58,31 @@ def group(args):
     write_file(args.output, out)
 
 
+def keywords(args):
+    keywords = read_file(args.catalogue)
+    mesh = read_file('../smpc-global/meshTermsInversed.json')
+    out = []
+
+    for k in keywords:
+        if k['label'] in mesh:
+            out.append(mesh[k['label']])
+
+    write_file(args.output, out)
+
+
 def main():
     parser = argparse.ArgumentParser(
-        description='SMPC catalogue processor')
+        description=(
+            'An SMPC catalogue processor that process mesh terms and output various structures. '
+            'The input file must be as exported from mesh.py with flag --flatten. \n\n'
+            'Example: \n'
+            '1) Download an xml mesh file from ftp://nlmpubs.nlm.nih.gov/online/mesh.\n'
+            '2) Run mesh.py mesh.xml output.json. \n'
+            '3) Run mesh.py output.json flatten.json --flatten. \n'
+            '4) Run catalogue.py flatten.json normal.json --normal. \n'
+        ),
+        formatter_class=argparse.RawTextHelpFormatter
+    )
     parser.add_argument('catalogue', help='Catalogue file')
     parser.add_argument('output', help='Output file')
     parser.add_argument(
@@ -82,7 +104,12 @@ def main():
         '-g',
         '--group',
         action='store_true',
-        help='Create a file where each mesh term has its childer.')
+        help='Create a file where each mesh term has its children.')
+    parser.add_argument(
+        '-k',
+        '--keywords',
+        action='store_true',
+        help='Create a file with keywords as mesh terms. File structure must be as returned from the catalogue API.')
     parser.add_argument('--version', action='version', version='%(prog)s 0.1')
     args = parser.parse_args()
 
@@ -95,6 +122,8 @@ def main():
         code(args)
     elif(args.group):
         group(args)
+    elif(args.keywords):
+        keywords(args)
     else:
         normal(args)
 

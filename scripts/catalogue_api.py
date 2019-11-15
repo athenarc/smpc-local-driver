@@ -1,27 +1,28 @@
 import requests
 from tqdm import tqdm
-from settings import CATALOGUE_EXPLORER_API, CATALOGUE_MESH_API
+from settings import CATALOGUE_SEARCH_URL, CATALOGUE_RECORD_URL, CATALOGUE_TRANSLATE_URL
 from utils import lcs
 
 
 def get_catalogue_records(data):
     results = []
-    SEARCH_URL = '{0}/search/'.format(CATALOGUE_EXPLORER_API)
 
-    res = requests.post(url=SEARCH_URL, data=data, headers={'accept': 'application/json', 'Content-Type': 'application/x-www-form-urlencoded'})
+    res = requests.post(url=CATALOGUE_SEARCH_URL, data=data, headers={'accept': 'application/json', 'Content-Type': 'application/x-www-form-urlencoded'})
 
     if res.status_code != 200:
         return results
 
     res = res.json()
 
-    for entry in tqdm(res['data'][:1]):
-        for rec in tqdm(entry['records']):
-            catalogue_id = rec['catalogue_id']
-            RECORD_URL = '{0}/getRecord/?catalogue_id={1}'.format(CATALOGUE_EXPLORER_API, catalogue_id)
-            detailed_record = requests.get(url=RECORD_URL, headers={'accept': 'application/json'})
-            if detailed_record.status_code == 200:
-                results.append(detailed_record.json())
+    if 'data_item_ids' not in res:
+        return results
+
+    for entry in tqdm(res['data_item_ids']):
+        catalogue_id = entry
+        RECORD_URL = '{0}/{1}'.format(CATALOGUE_RECORD_URL, catalogue_id)
+        detailed_record = requests.get(url=RECORD_URL, headers={'accept': 'application/json'})
+        if detailed_record.status_code == 200:
+            results.append(detailed_record.json())
 
     return results
 
@@ -35,8 +36,11 @@ def map_attributes_to_mesh(value, banned_columns=None):
         'result_format': 'json'
     }
 
-    URL = '{0}/{1}'.format(CATALOGUE_MESH_API, 'translate/')
-    response = requests.post(URL, data=data)
+    response = requests.post(CATALOGUE_TRANSLATE_URL, data=data)
+
+    if response.status_code != 200:
+        return None
+
     maximum_ed = None
     mesh_code = None
 
